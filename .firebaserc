@@ -1,12 +1,12 @@
 {
   "projects": {
-    "default": "mrgnt-504117"
+    "default": "mrgnt-webpage"
   },
   "targets": {
-    "mrgnt-504117": {
+    "mrgnt-webpage": {
       "hosting": {
-        "prod": ["mrgnt-504117"],
-        "dev": ["mrgnt-dev"]
+        "prod": ["mrgnt-webpage"],
+        "dev": ["mrgnt-webpage-dev"]
       }
     }
   }

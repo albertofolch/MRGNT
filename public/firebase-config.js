@@ -3,12 +3,12 @@ import { getAuth, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs
 import { getStorage, connectStorageEmulator } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyDeExSnUJERc229M6Vr2Wo4WtUHLnrTAAY',
-  authDomain: 'mrgnt-504117.firebaseapp.com',
-  projectId: 'mrgnt-504117',
-  storageBucket: 'mrgnt-504117.firebasestorage.app',
-  messagingSenderId: '993617480326',
-  appId: '1:993617480326:web:154cb63a474081d4045f07',
+  apiKey: 'AIzaSyBJ3pZnYef8bDsSpNSvdiU1QFE3rS9XlyE',
+  authDomain: 'mrgnt-webpage.firebaseapp.com',
+  projectId: 'mrgnt-webpage',
+  storageBucket: 'mrgnt-webpage.firebasestorage.app',
+  messagingSenderId: '955000045296',
+  appId: '1:955000045296:web:64bd4311d68046d3c88c35',
 };
 
 const app = initializeApp(firebaseConfig);

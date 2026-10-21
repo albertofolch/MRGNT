@@ -349,6 +349,33 @@ function drawArticleHeadline(ctx, width, y0, title) {
   return y - (size + 8) + 28;
 }
 
+function drawArticleSummary(ctx, width, y0, text) {
+  const marginX = MARGIN;
+  const boxX = marginX;
+  const boxW = width - marginX * 2;
+  const padX = 24;
+  const padY = 22;
+  const lineHeight = 26;
+  const textW = boxW - padX * 2;
+
+  ctx.font = '700 20px "Space Grotesk", sans-serif';
+  const lines = wrapText(ctx, text.toUpperCase(), textW);
+  const boxH = padY * 2 + lines.length * lineHeight;
+
+  ctx.fillStyle = COLORS.ink;
+  ctx.fillRect(boxX, y0, boxW, boxH);
+
+  ctx.fillStyle = COLORS.paper;
+  ctx.textAlign = 'left';
+  let ty = y0 + padY + lineHeight - 8;
+  lines.forEach((line) => {
+    ctx.fillText(line, boxX + padX, ty);
+    ty += lineHeight;
+  });
+
+  return y0 + boxH;
+}
+
 function drawArticleColumns(ctx, width, y0, text, colHeight) {
   const marginX = MARGIN;
   const colGap = 30;
@@ -409,6 +436,11 @@ export async function generateArticleNewspaperImage({ title, author, dateDisplay
   let y = drawArticleHeader(ctx, WIDTH_ARTICLE, logoImg);
   y = drawArticleByline(ctx, WIDTH_ARTICLE, y, author, dateDisplay);
   y = drawArticleHeadline(ctx, WIDTH_ARTICLE, y, title.trim());
+
+  if (excerpt && excerpt.trim()) {
+    y = drawArticleSummary(ctx, WIDTH_ARTICLE, y, excerpt.trim());
+    y += 24;
+  }
 
   const bodyText = stripHtml(bodyHtml) || (excerpt || '').trim();
   const img = await loadImage(photoSource.src);

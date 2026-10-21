@@ -5,7 +5,7 @@ const admin = require('firebase-admin');
 const { slugify } = require('../lib/slugify');
 
 admin.initializeApp({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT || 'mrgnt-504117',
+  projectId: process.env.GOOGLE_CLOUD_PROJECT || 'mrgnt-webpage',
 });
 
 const db = admin.firestore();
