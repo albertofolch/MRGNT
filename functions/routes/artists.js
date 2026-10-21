@@ -73,32 +73,36 @@ function buildDocData(body) {
   };
 }
 
+async function createArtistDoc(docData) {
+  const baseSlug = slugify(docData.name) || 'artista';
+  const col = admin.firestore().collection('artists');
+  let finalRef = null;
+  await admin.firestore().runTransaction(async (tx) => {
+    let slug = baseSlug;
+    let n = 2;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const snap = await tx.get(col.where('slug', '==', slug));
+      if (snap.empty) {
+        const ref = col.doc();
+        tx.set(ref, { ...docData, slug, createdAt: admin.firestore.FieldValue.serverTimestamp() });
+        finalRef = ref;
+        return;
+      }
+      slug = `${baseSlug}-${n++}`;
+    }
+    throw new Error('No se pudo generar slug único');
+  });
+  return finalRef.get();
+}
+
 router.post('/', requireAdmin, async (req, res) => {
   const error = validate(req.body || {});
   if (error) return res.status(400).json({ error });
 
   const docData = buildDocData(req.body);
-  const baseSlug = slugify(docData.name) || 'artista';
-  const col = admin.firestore().collection('artists');
 
   try {
-    let finalRef = null;
-    await admin.firestore().runTransaction(async (tx) => {
-      let slug = baseSlug;
-      let n = 2;
-      for (let attempt = 0; attempt < 20; attempt++) {
-        const snap = await tx.get(col.where('slug', '==', slug));
-        if (snap.empty) {
-          const ref = col.doc();
-          tx.set(ref, { ...docData, slug, createdAt: admin.firestore.FieldValue.serverTimestamp() });
-          finalRef = ref;
-          return;
-        }
-        slug = `${baseSlug}-${n++}`;
-      }
-      throw new Error('No se pudo generar slug único');
-    });
-    const snap = await finalRef.get();
+    const snap = await createArtistDoc(docData);
     res.status(201).json(toClient(snap));
   } catch (err) {
     res.status(500).json({ error: err.message || 'Error al crear artista' });
@@ -157,3 +161,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.validate = validate;
+module.exports.buildDocData = buildDocData;
+module.exports.createArtistDoc = createArtistDoc;
+module.exports.toClient = toClient;

@@ -1,8 +1,10 @@
 import { apiFetch, requireAdminSession, renderAdminNav } from '/admin/admin-common.js';
 import { initRichEditor } from '/admin/rich-editor.js';
+import { generateEventsNewspaperImage, EVENTS_MIN, EVENTS_MAX } from '/admin/newspaper-image.js';
 
 let events = [];
 let editingId = null;
+const selectedForNewspaper = new Set();
 
 const form = document.getElementById('event-form');
 const errorEl = document.getElementById('event-error');
@@ -60,6 +62,7 @@ function renderList() {
       ? `<a href="${ev.locationUrl}" target="_blank" rel="noopener">Mapa</a>`
       : '';
     row.innerHTML = `
+      ${ev.image ? `<img class="admin-row-thumb" src="${ev.image}" alt="">` : ''}
       <div class="admin-row-main">
         <div class="admin-row-title">${ev.artist}${ev.tag ? ' · ' + ev.tag : ''}</div>
         <div class="admin-row-sub">${ev.day} ${ev.date} · ${ev.time} — ${ev.stage}</div>
@@ -81,6 +84,7 @@ async function loadEvents() {
   const res = await apiFetch('/api/events');
   events = await res.json();
   renderList();
+  newspaperOpenBtn.disabled = events.length < EVENTS_MIN;
 }
 
 async function deleteEvent(ev) {
@@ -122,6 +126,95 @@ form.addEventListener('submit', async (e) => {
 });
 
 cancelBtn.addEventListener('click', resetForm);
+
+// --- Weekly newspaper image ---
+
+const newspaperOpenBtn = document.getElementById('newspaper-open');
+const newspaperCloseBtn = document.getElementById('newspaper-close');
+const newspaperOverlay = document.getElementById('newspaper-overlay');
+const newspaperListEl = document.getElementById('newspaper-picker-list');
+const newspaperCounterEl = document.getElementById('newspaper-counter');
+const newspaperGenerateBtn = document.getElementById('newspaper-generate');
+const newspaperModalErrorEl = document.getElementById('newspaper-modal-error');
+const newspaperErrorEl = document.getElementById('newspaper-error');
+const newspaperPreviewEl = document.getElementById('newspaper-preview');
+const newspaperPreviewImg = document.getElementById('newspaper-preview-img');
+const newspaperDownloadLink = document.getElementById('newspaper-download');
+
+function updateNewspaperCounter() {
+  const n = selectedForNewspaper.size;
+  newspaperCounterEl.textContent = `${n} de ${EVENTS_MIN}–${EVENTS_MAX} seleccionados`;
+  newspaperGenerateBtn.disabled = n < EVENTS_MIN || n > EVENTS_MAX;
+}
+
+function renderNewspaperPicker() {
+  newspaperListEl.innerHTML = '';
+  events.forEach((ev) => {
+    const row = document.createElement('label');
+    row.className = 'admin-picker-item';
+    const checked = selectedForNewspaper.has(ev.id);
+    row.innerHTML = `
+      <input type="checkbox" data-id="${ev.id}" ${checked ? 'checked' : ''}>
+      <span>
+        <strong>${ev.artist}${ev.tag ? ' · ' + ev.tag : ''}</strong>
+        <span class="admin-row-sub">${ev.day} ${ev.date} · ${ev.time} — ${ev.stage}</span>
+      </span>
+    `;
+    row.querySelector('input').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        if (selectedForNewspaper.size >= EVENTS_MAX) {
+          e.target.checked = false;
+          newspaperModalErrorEl.textContent = `Puedes seleccionar máximo ${EVENTS_MAX} eventos.`;
+          newspaperModalErrorEl.hidden = false;
+          return;
+        }
+        selectedForNewspaper.add(ev.id);
+      } else {
+        selectedForNewspaper.delete(ev.id);
+      }
+      newspaperModalErrorEl.hidden = true;
+      updateNewspaperCounter();
+    });
+    newspaperListEl.appendChild(row);
+  });
+}
+
+function openNewspaperPicker() {
+  newspaperModalErrorEl.hidden = true;
+  renderNewspaperPicker();
+  updateNewspaperCounter();
+  newspaperOverlay.hidden = false;
+}
+
+function closeNewspaperPicker() {
+  newspaperOverlay.hidden = true;
+}
+
+newspaperOpenBtn.addEventListener('click', openNewspaperPicker);
+newspaperCloseBtn.addEventListener('click', closeNewspaperPicker);
+newspaperOverlay.addEventListener('click', (e) => {
+  if (e.target === newspaperOverlay) closeNewspaperPicker();
+});
+
+newspaperGenerateBtn.addEventListener('click', async () => {
+  newspaperModalErrorEl.hidden = true;
+  const selected = events.filter((ev) => selectedForNewspaper.has(ev.id));
+  newspaperGenerateBtn.disabled = true;
+  try {
+    const dataUrl = await generateEventsNewspaperImage(selected);
+    newspaperErrorEl.hidden = true;
+    newspaperPreviewImg.src = dataUrl;
+    newspaperDownloadLink.href = dataUrl;
+    newspaperDownloadLink.download = `mrgnt-periodico-${new Date().toISOString().slice(0, 10)}.png`;
+    newspaperPreviewEl.hidden = false;
+    closeNewspaperPicker();
+  } catch (err) {
+    newspaperModalErrorEl.textContent = err.message || 'No se pudo generar la imagen. Inténtalo de nuevo.';
+    newspaperModalErrorEl.hidden = false;
+  } finally {
+    updateNewspaperCounter();
+  }
+});
 
 requireAdminSession(['admin']).then(async (session) => {
   if (!session) return;

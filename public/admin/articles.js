@@ -2,6 +2,7 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'https:/
 import { storage } from '/firebase-config.js';
 import { apiFetch, requireAdminSession, renderAdminNav } from '/admin/admin-common.js';
 import { initRichEditor } from '/admin/rich-editor.js';
+import { generateArticleNewspaperImage } from '/admin/newspaper-image.js';
 
 let articles = [];
 let editingId = null;
@@ -217,49 +218,21 @@ function getPhotoSource() {
   const file = mediaInput.files[0];
   if (file) {
     if (!file.type.startsWith('image/')) return null;
-    return { src: URL.createObjectURL(file), crossOrigin: false };
+    return { src: URL.createObjectURL(file) };
   }
   if (editingId && editingArticle && editingArticle.media && !currentMediaRemoved && editingArticle.mediaType !== 'video') {
-    return { src: editingArticle.media, crossOrigin: true };
+    return { src: editingArticle.media };
   }
   return null;
 }
 
-function loadImage({ src, crossOrigin }) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    if (crossOrigin) img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('No se pudo cargar la foto para generar la imagen.'));
-    img.src = src;
-  });
-}
+const MONTH_ABBR = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-function wrapText(ctx, text, maxWidth) {
-  const words = text.split(' ');
-  const lines = [];
-  let line = '';
-  words.forEach((word) => {
-    const test = line ? `${line} ${word}` : word;
-    if (line && ctx.measureText(test).width > maxWidth) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = test;
-    }
-  });
-  if (line) lines.push(line);
-  return lines;
-}
-
-function drawRoundedRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
+function isoToDisplayDate(iso) {
+  if (!iso) return '';
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return '';
+  return `${String(day).padStart(2, '0')} ${MONTH_ABBR[month - 1]} ${year}`;
 }
 
 const DIACRITICS_RE = new RegExp(`[${String.fromCodePoint(0x0300)}-${String.fromCodePoint(0x036f)}]`, 'g');
@@ -290,65 +263,14 @@ async function generateSocialImage() {
 
   socialGenerateBtn.disabled = true;
   try {
-    await Promise.all([
-      document.fonts.load('700 56px Bungee'),
-      document.fonts.load('700 18px "Space Mono"'),
-    ]).catch(() => {});
-
-    const img = await loadImage(photoSource);
-
-    const width = 1200;
-    const height = 630;
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-
-    const scale = Math.max(width / img.width, height / img.height);
-    const drawWidth = img.width * scale;
-    const drawHeight = img.height * scale;
-    ctx.drawImage(img, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
-
-    const gradient = ctx.createLinearGradient(0, height * 0.3, 0, height);
-    gradient.addColorStop(0, 'rgba(20, 14, 10, 0)');
-    gradient.addColorStop(1, 'rgba(20, 14, 10, 0.9)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '700 32px Bungee, sans-serif';
-    ctx.fillText('MRGNT', 48, 64);
-
-    ctx.font = '700 56px Bungee, sans-serif';
-    const lines = wrapText(ctx, title, width - 96).slice(0, 3);
-    const lineHeight = 62;
-    let lineY = height - 64 - (lines.length - 1) * lineHeight;
-    const firstLineY = lineY;
-
-    const category = categorySelect.value;
-    if (category) {
-      ctx.font = '700 18px "Space Mono", monospace';
-      const badgeText = category.toUpperCase();
-      const badgePaddingX = 16;
-      const badgeWidth = ctx.measureText(badgeText).width + badgePaddingX * 2;
-      const badgeHeight = 36;
-      const badgeY = firstLineY - lineHeight - 6;
-      ctx.fillStyle = '#c8502a';
-      drawRoundedRect(ctx, 48, badgeY, badgeWidth, badgeHeight, 18);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(badgeText, 48 + badgePaddingX, badgeY + 24);
-    }
-
-    ctx.font = '700 56px Bungee, sans-serif';
-    ctx.fillStyle = '#ffffff';
-    lines.forEach((line) => {
-      ctx.fillText(line, 48, lineY);
-      lineY += lineHeight;
+    const dataUrl = await generateArticleNewspaperImage({
+      title,
+      author: document.getElementById('article-author').value,
+      dateDisplay: isoToDisplayDate(document.getElementById('article-date').value),
+      bodyHtml: noteEditor.getHTML(),
+      excerpt: document.getElementById('article-excerpt').value,
+      photoSource,
     });
-
-    const dataUrl = canvas.toDataURL('image/png');
     socialPreviewImg.src = dataUrl;
     socialDownloadLink.href = dataUrl;
     socialDownloadLink.download = `${slugifyForFilename(title)}-social.png`;

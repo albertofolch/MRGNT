@@ -148,11 +148,23 @@ function renderEmbed(ev) {
   embedEl.hidden = false;
 }
 
+function renderImage(ev) {
+  const imageEl = document.getElementById('evento-image');
+  if (ev.image) {
+    imageEl.src = ev.image;
+    imageEl.alt = ev.displayTitle;
+    imageEl.hidden = false;
+  } else {
+    imageEl.hidden = true;
+  }
+}
+
 function renderEvento(ev) {
   document.title = `${ev.displayTitle} — MRGNT`;
   document.getElementById('evento-title').textContent = ev.displayTitle;
   document.getElementById('evento-meta').textContent = `${ev.day} ${ev.date} · ${ev.time} — ${ev.stage}`;
 
+  renderImage(ev);
   renderEmbed(ev);
   renderMap(ev);
 

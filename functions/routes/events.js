@@ -6,6 +6,8 @@ const { slugify } = require('../lib/slugify');
 const { sanitizeRichText } = require('../lib/sanitize');
 const { detectEmbedProvider } = require('../lib/embeds');
 const { resolveMapsEmbedUrl } = require('../lib/maps');
+const { saveEventImage } = require('../lib/images');
+const { deleteMediaFile } = require('../storage');
 
 const router = express.Router();
 
@@ -30,6 +32,7 @@ function toClient(doc) {
     ticket_link: d.ticket_link || null,
     embedUrl: d.embed_url || null,
     embedProvider: d.embed_provider || null,
+    image: d.image || null,
     locationUrl: d.location_url || null,
     locationEmbedUrl: d.location_embed_url || null,
   };
@@ -130,6 +133,16 @@ router.post('/', requireAdmin, async (req, res) => {
 
   const docData = await buildDocData(req.body);
 
+  if (req.body.image_data) {
+    try {
+      const { url, path } = await saveEventImage(req.body.image_data);
+      docData.image = url;
+      docData.image_path = path;
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
   try {
     const snap = await createEventDoc(docData);
     res.status(201).json(toClient(snap));
@@ -148,6 +161,25 @@ router.put('/:id', requireAdmin, async (req, res) => {
 
   const docData = await buildDocData(req.body);
   const existing = snap.data();
+
+  // Images aren't part of the plain form fields buildDocData() overwrites wholesale —
+  // keep the existing image unless a replacement was uploaded or removal was requested.
+  docData.image = existing.image || null;
+  docData.image_path = existing.image_path || null;
+  if (req.body.image_data) {
+    try {
+      const { url, path } = await saveEventImage(req.body.image_data);
+      if (existing.image_path) await deleteMediaFile(existing.image_path);
+      docData.image = url;
+      docData.image_path = path;
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  } else if (req.body.remove_image === true) {
+    if (existing.image_path) await deleteMediaFile(existing.image_path);
+    docData.image = null;
+    docData.image_path = null;
+  }
 
   try {
     if (existing.slug) {
@@ -183,6 +215,8 @@ router.delete('/:id', requireAdmin, async (req, res) => {
   if (!snap.exists) return res.status(404).json({ error: 'No encontrado' });
   try {
     await ref.delete();
+    const { image_path } = snap.data();
+    if (image_path) await deleteMediaFile(image_path);
     res.status(204).end();
   } catch {
     res.status(500).json({ error: 'Error al eliminar evento' });

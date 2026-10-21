@@ -2,6 +2,8 @@ const express = require('express');
 const admin = require('firebase-admin');
 const { requireAdmin } = require('../auth');
 const { isoToDisplay, dayAbbrev } = require('../lib/dateFormat');
+const { saveEventImage } = require('../lib/images');
+const { deleteMediaFile } = require('../storage');
 const { validate, buildDocData, createEventDoc, toClient } = require('./events');
 
 const router = express.Router();
@@ -18,10 +20,13 @@ function toClientSubmission(doc) {
     artist: d.artist,
     tag: d.tag || '',
     title: d.title || null,
+    displayTitle: d.title || d.artist,
     description: d.description || null,
     cost: d.cost || null,
     ticket_link: d.ticket_link || null,
     embedUrl: d.embed_url || null,
+    embedProvider: d.embed_provider || null,
+    image: d.image || null,
     locationUrl: d.location_url || null,
     locationEmbedUrl: d.location_embed_url || null,
     submitterName: d.submitter_name,
@@ -45,6 +50,16 @@ router.post('/', async (req, res) => {
     submitter_email: body.submitter_email.trim(),
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
+
+  if (body.image_data) {
+    try {
+      const { url, path } = await saveEventImage(body.image_data);
+      docData.image = url;
+      docData.image_path = path;
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
 
   try {
     const ref = await admin.firestore().collection('event_submissions').add(docData);
@@ -70,7 +85,11 @@ router.post('/:id/approve', requireAdmin, async (req, res) => {
   const snap = await ref.get();
   if (!snap.exists) return res.status(404).json({ error: 'No encontrado' });
 
-  const docData = await buildDocData(snap.data());
+  // snap.data() was already normalized by buildDocData() when the submission was created
+  // (e.g. blank optional fields stored as null), so re-running it here would call
+  // .trim() on those nulls and throw. Just drop the submission-only fields and reuse
+  // the stored event data as-is.
+  const { submitter_name, submitter_email, createdAt, ...docData } = snap.data();
   try {
     const eventSnap = await createEventDoc(docData);
     await ref.delete();
@@ -85,6 +104,8 @@ router.delete('/:id', requireAdmin, async (req, res) => {
   const snap = await ref.get();
   if (!snap.exists) return res.status(404).json({ error: 'No encontrado' });
   await ref.delete();
+  const { image_path } = snap.data();
+  if (image_path) await deleteMediaFile(image_path);
   res.status(204).end();
 });
 

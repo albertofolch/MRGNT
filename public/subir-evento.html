@@ -37,71 +37,81 @@
 
 <!-- FORM -->
 <section class="page-content">
-  <div class="card event-submit-card">
-    <form id="event-submit-form" class="event-submit-form">
-      <p class="event-submit-message" id="event-submit-error" hidden></p>
-      <p class="event-submit-message event-submit-message-success" id="event-submit-success" hidden></p>
+  <div class="card submit-card">
+    <form id="event-submit-form" class="submit-form">
+      <p class="submit-message" id="event-submit-error" hidden></p>
+      <p class="submit-message submit-message-success" id="event-submit-success" hidden></p>
 
-      <input type="text" id="event-website" name="website" class="event-submit-honeypot" tabindex="-1" autocomplete="off">
+      <input type="text" id="event-website" name="website" class="submit-honeypot" tabindex="-1" autocomplete="off">
 
-      <div class="event-submit-row">
-        <div class="event-submit-field">
+      <div class="submit-row">
+        <div class="submit-field">
           <label for="event-date">Fecha</label>
-          <input class="event-submit-input" type="date" id="event-date" required>
+          <input class="submit-input" type="date" id="event-date" required>
         </div>
-        <div class="event-submit-field">
+        <div class="submit-field">
           <label for="event-time">Hora</label>
-          <input class="event-submit-input" type="text" id="event-time" placeholder="8:00 PM" required>
+          <input class="submit-input" type="text" id="event-time" placeholder="8:00 PM" required>
         </div>
       </div>
-      <div class="event-submit-row">
-        <div class="event-submit-field">
+      <div class="submit-row">
+        <div class="submit-field">
           <label for="event-stage">Lugar</label>
-          <input class="event-submit-input" type="text" id="event-stage" placeholder="Nombre del lugar, foro o escenario" required>
+          <input class="submit-input" type="text" id="event-stage" placeholder="Nombre del lugar, foro o escenario" required>
         </div>
-        <div class="event-submit-field">
+        <div class="submit-field">
           <label for="event-artist">Artista / acto</label>
-          <input class="event-submit-input" type="text" id="event-artist" required>
+          <input class="submit-input" type="text" id="event-artist" required>
         </div>
       </div>
-      <div class="event-submit-field">
+      <div class="submit-field">
         <label for="event-location-url">Ubicación en Google Maps (opcional)</label>
-        <input class="event-submit-input" type="url" id="event-location-url" placeholder="https://maps.app.goo.gl/...">
-        <p class="event-submit-hint">En Google Maps, busca el lugar exacto y usa "Compartir" → "Copiar enlace".</p>
+        <input class="submit-input" type="url" id="event-location-url" placeholder="https://maps.app.goo.gl/...">
+        <p class="submit-hint">En Google Maps, busca el lugar exacto y usa "Compartir" → "Copiar enlace".</p>
       </div>
-      <div class="event-submit-field">
+      <div class="submit-field">
         <label for="event-title">Título del evento (opcional)</label>
-        <input class="event-submit-input" type="text" id="event-title" placeholder="Solo si el evento necesita un título distinto al artista/acto">
+        <input class="submit-input" type="text" id="event-title" placeholder="Solo si el evento necesita un título distinto al artista/acto">
       </div>
-      <div class="event-submit-field">
+      <div class="submit-field">
         <label for="event-tag">Etiqueta (opcional)</label>
-        <input class="event-submit-input" type="text" id="event-tag" placeholder="Headliner, Benéfico, etc.">
+        <input class="submit-input" type="text" id="event-tag" placeholder="Headliner, Benéfico, etc.">
       </div>
-      <div class="event-submit-field">
+      <div class="submit-field">
         <label for="event-description">Descripción (opcional)</label>
-        <textarea class="event-submit-input event-submit-textarea" id="event-description"></textarea>
+        <textarea class="submit-input submit-textarea" id="event-description"></textarea>
       </div>
-      <div class="event-submit-row">
-        <div class="event-submit-field">
+      <div class="submit-row">
+        <div class="submit-field">
           <label for="event-cost">Costo (opcional)</label>
-          <input class="event-submit-input" type="text" id="event-cost" placeholder="Gratis, $200 MXN, etc.">
+          <input class="submit-input" type="text" id="event-cost" placeholder="Gratis, $200 MXN, etc.">
         </div>
-        <div class="event-submit-field">
+        <div class="submit-field">
           <label for="event-ticket-link">Enlace de boletos (opcional)</label>
-          <input class="event-submit-input" type="url" id="event-ticket-link" placeholder="https://...">
+          <input class="submit-input" type="url" id="event-ticket-link" placeholder="https://...">
         </div>
       </div>
+      <div class="submit-field">
+        <label for="event-image">Imagen (opcional)</label>
+        <input class="submit-input" type="file" id="event-image" accept="image/jpeg,image/png,image/webp,image/gif">
+        <p class="submit-hint">JPEG, PNG, WEBP o GIF, máx. 5 MB.</p>
+      </div>
+      <div class="submit-field">
+        <label for="event-embed-url">Embed de redes sociales (opcional)</label>
+        <input class="submit-input" type="url" id="event-embed-url" placeholder="https://www.youtube.com/watch?v=...">
+        <p class="submit-hint">Pega un enlace de YouTube, Instagram, TikTok o X/Twitter para mostrarlo en la página del evento.</p>
+      </div>
 
-      <hr class="event-submit-divider">
+      <hr class="submit-divider">
 
-      <div class="event-submit-row">
-        <div class="event-submit-field">
+      <div class="submit-row">
+        <div class="submit-field">
           <label for="event-submitter-name">Tu nombre</label>
-          <input class="event-submit-input" type="text" id="event-submitter-name" required>
+          <input class="submit-input" type="text" id="event-submitter-name" required>
         </div>
-        <div class="event-submit-field">
+        <div class="submit-field">
           <label for="event-submitter-email">Tu email</label>
-          <input class="event-submit-input" type="email" id="event-submitter-email" placeholder="Para contactarte si tenemos dudas" required>
+          <input class="submit-input" type="email" id="event-submitter-email" placeholder="Para contactarte si tenemos dudas" required>
         </div>
       </div>
 

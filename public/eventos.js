@@ -18,11 +18,19 @@ function groupEventsByMonth(list) {
   return groups;
 }
 
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function renderEventos(events) {
   const container = document.getElementById('eventos-groups');
   container.innerHTML = '';
 
-  groupEventsByMonth(events).forEach((group) => {
+  const today = todayISO();
+  const upcoming = events.filter((ev) => ev.event_date >= today);
+
+  groupEventsByMonth(upcoming).forEach((group) => {
     const monthEl = document.createElement('div');
     monthEl.className = 'eventos-month';
 

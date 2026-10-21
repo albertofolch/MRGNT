@@ -3,10 +3,16 @@ service firebase.storage {
   match /b/{bucket}/o {
     match /articles/{fileName} {
       allow read: if true;
-      allow write, delete: if request.auth != null
-        && request.auth.token.admin == true
+      allow write: if request.auth != null
+        && (request.auth.token.admin == true || request.auth.token.role == 'writer')
         && request.resource.size < 25 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|png|gif|webp)|video/(mp4|webm|quicktime)');
+      allow delete: if request.auth != null && request.auth.token.admin == true;
+    }
+    // Event images are uploaded server-side (functions/lib/images.js) via the Admin SDK,
+    // which bypasses these rules entirely, so no client write/delete rule is needed here.
+    match /events/{fileName} {
+      allow read: if true;
     }
   }
 }

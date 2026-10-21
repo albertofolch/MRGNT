@@ -69,10 +69,20 @@ function renderNoticias(categories) {
   });
 }
 
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function upcomingEvents(events) {
+  const today = todayISO();
+  return events.filter((ev) => ev.event_date >= today);
+}
+
 function renderEvents(events) {
   const listEl = document.getElementById('events-list');
   listEl.innerHTML = '';
-  events.slice(0, 4).forEach((ev) => {
+  upcomingEvents(events).slice(0, 4).forEach((ev) => {
     const row = document.createElement(ev.slug ? 'a' : 'div');
     row.className = 'event-row';
     if (ev.slug) row.href = `evento.html?slug=${encodeURIComponent(ev.slug)}`;

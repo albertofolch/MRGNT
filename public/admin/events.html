@@ -76,7 +76,34 @@
     </div>
   </form>
 
+  <div class="card admin-social-card">
+    <div class="admin-heading">
+      <h2>PERIÓDICO SEMANAL</h2>
+    </div>
+    <p class="admin-hint">Genera una imagen tipo portada de periódico con 3 a 6 eventos, lista para compartir. El título, logo y pie siempre son los mismos; solo cambian los eventos.</p>
+    <button type="button" class="btn btn-ghost btn-md admin-social-generate" id="newspaper-open">Seleccionar eventos</button>
+    <p class="admin-error" id="newspaper-error" hidden></p>
+    <div class="admin-social-preview" id="newspaper-preview" hidden>
+      <img id="newspaper-preview-img" alt="Vista previa del periódico de eventos">
+      <a class="btn btn-secondary btn-md" id="newspaper-download" download>Descargar imagen</a>
+    </div>
+  </div>
+
   <div class="admin-list" id="events-list"></div>
+</div>
+
+<div class="admin-modal-overlay" id="newspaper-overlay" hidden>
+  <div class="admin-modal">
+    <button type="button" class="admin-modal-close" id="newspaper-close" aria-label="Cerrar selección">&times;</button>
+    <p class="admin-preview-label">Periódico semanal</p>
+    <h1 class="admin-preview-title">Selecciona los eventos</h1>
+    <p class="admin-preview-meta" id="newspaper-counter">0 de 3–6 seleccionados</p>
+    <div class="admin-picker-list" id="newspaper-picker-list"></div>
+    <p class="admin-error" id="newspaper-modal-error" hidden></p>
+    <div class="admin-form-actions">
+      <button type="button" class="btn btn-secondary btn-md" id="newspaper-generate" disabled>Generar imagen</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>

@@ -18,6 +18,26 @@
   <div class="admin-list" id="submissions-list"></div>
 </div>
 
+<div class="admin-modal-overlay" id="preview-overlay" hidden>
+  <div class="admin-modal">
+    <button type="button" class="admin-modal-close" id="preview-close" aria-label="Cerrar vista previa">&times;</button>
+    <p class="admin-preview-label">Vista previa</p>
+    <h1 class="admin-preview-title" id="preview-title"></h1>
+    <p class="admin-preview-meta" id="preview-meta"></p>
+    <div class="card noticia-card">
+      <img class="evento-image" id="preview-image" alt="" hidden>
+      <div class="noticia-embed" id="preview-embed" hidden></div>
+      <div class="noticia-body" id="preview-body"></div>
+      <div class="evento-map" id="preview-map" hidden>
+        <iframe id="preview-map-iframe" title="Ubicación del evento" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <a class="evento-map-link" id="preview-map-link" href="#" target="_blank" rel="noopener" hidden>Ver ubicación en Google Maps ↗</a>
+      <p class="evento-cost" id="preview-cost" hidden></p>
+      <a class="btn btn-secondary btn-md" id="preview-ticket-link" href="#" target="_blank" rel="noopener" hidden>Comprar boletos</a>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="/admin/event-submissions.js"></script>
 </body>
 </html>

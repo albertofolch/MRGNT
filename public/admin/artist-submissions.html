@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solicitudes de artistas — MRGNT admin</title>
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body data-admin>
+
+<div class="admin-shell">
+  <div class="admin-heading">
+    <h1>SOLICITUDES DE ARTISTAS</h1>
+  </div>
+  <p class="admin-hint" id="submissions-hint">Artistas propuestos por la comunidad, en espera de revisión.</p>
+
+  <div class="admin-list" id="submissions-list"></div>
+</div>
+
+<div class="admin-modal-overlay" id="preview-overlay" hidden>
+  <div class="admin-modal">
+    <button type="button" class="admin-modal-close" id="preview-close" aria-label="Cerrar vista previa">&times;</button>
+    <p class="admin-preview-label">Vista previa</p>
+    <h1 class="admin-preview-title" id="preview-title"></h1>
+    <p class="admin-preview-meta" id="preview-meta"></p>
+    <div class="card noticia-card">
+      <div class="noticia-body" id="preview-body"></div>
+      <div class="admin-field" id="preview-spotify-section" hidden>
+        <label>Spotify</label>
+        <p class="admin-hint" id="preview-spotify-raw"></p>
+        <p class="admin-hint" id="preview-spotify-status" hidden></p>
+        <div class="admin-spotify-preview" id="preview-spotify-preview" hidden>
+          <img class="admin-spotify-preview-image" id="preview-spotify-image" alt="">
+          <div class="admin-spotify-preview-body">
+            <strong id="preview-spotify-name"></strong>
+            <ul class="admin-spotify-preview-tracks" id="preview-spotify-tracks"></ul>
+          </div>
+        </div>
+        <a class="admin-btn-link" id="preview-spotify-link" href="#" target="_blank" rel="noopener">Abrir en Spotify ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/admin/artist-submissions.js"></script>
+</body>
+</html>

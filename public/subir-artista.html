@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propón un artista — MRGNT</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="artistas">
+<div class="container">
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" class="nav-brand"><img src="assets/logo.png" alt="MRGNT" class="nav-logo"></a>
+  <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-menu">
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+  </button>
+  <div class="nav-menu" id="nav-menu">
+    <div class="nav-links">
+      <a href="index.html#inicio" class="nav-link" data-page="inicio">Inicio</a>
+      <a href="noticias.html" class="nav-link" data-page="noticias">Noticias</a>
+      <a href="eventos.html" class="nav-link" data-page="eventos">Eventos</a>
+      <a href="artistas.html" class="nav-link" data-page="artistas">Artistas</a>
+      <a href="convocatoria.html" class="nav-link" data-page="convocatoria">Convocatoria</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<section class="page-header">
+  <a href="artistas.html" class="noticia-back">← Volver a artistas</a>
+  <h1>PROPÓN UN ARTISTA</h1>
+  <p>¿Conoces a un artista emergente que debería estar en MRGNT? Cuéntanos de él o ella y lo revisaremos antes de publicarlo.</p>
+</section>
+
+<!-- FORM -->
+<section class="page-content">
+  <div class="card submit-card">
+    <form id="artist-submit-form" class="submit-form">
+      <p class="submit-message" id="artist-submit-error" hidden></p>
+      <p class="submit-message submit-message-success" id="artist-submit-success" hidden></p>
+
+      <input type="text" id="artist-website" name="website" class="submit-honeypot" tabindex="-1" autocomplete="off">
+
+      <div class="submit-row">
+        <div class="submit-field">
+          <label for="artist-name">Nombre del artista</label>
+          <input class="submit-input" type="text" id="artist-name" required>
+        </div>
+        <div class="submit-field">
+          <label for="artist-discipline">Disciplina</label>
+          <select class="submit-input" id="artist-discipline" required></select>
+        </div>
+      </div>
+      <div class="submit-field">
+        <label for="artist-genre">Género (opcional)</label>
+        <input class="submit-input" type="text" id="artist-genre" placeholder="Rap, óleo, spoken word, etc.">
+      </div>
+      <div class="submit-field">
+        <label for="artist-bio">Biografía (opcional)</label>
+        <textarea class="submit-input submit-textarea" id="artist-bio"></textarea>
+      </div>
+      <div class="submit-field">
+        <label for="artist-spotify">Spotify (enlace, opcional)</label>
+        <input class="submit-input" type="text" id="artist-spotify" placeholder="https://open.spotify.com/artist/...">
+        <p class="submit-hint" id="artist-spotify-status" hidden></p>
+        <div class="submit-spotify-preview" id="artist-spotify-preview" hidden>
+          <img class="submit-spotify-preview-image" id="artist-spotify-preview-image" alt="">
+          <div class="submit-spotify-preview-body">
+            <strong id="artist-spotify-preview-name"></strong>
+            <ul class="submit-spotify-preview-tracks" id="artist-spotify-preview-tracks"></ul>
+          </div>
+        </div>
+      </div>
+
+      <hr class="submit-divider">
+
+      <div class="submit-row">
+        <div class="submit-field">
+          <label for="artist-submitter-name">Tu nombre</label>
+          <input class="submit-input" type="text" id="artist-submitter-name" required>
+        </div>
+        <div class="submit-field">
+          <label for="artist-submitter-email">Tu email</label>
+          <input class="submit-input" type="email" id="artist-submitter-email" placeholder="Para contactarte si tenemos dudas" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-secondary btn-md" id="artist-submit-btn">Enviar artista</button>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <span class="footer-logo">MRGNT</span>
+  <div class="footer-links">
+    <a href="index.html#inicio">Inicio</a>
+    <a href="noticias.html">Noticias</a>
+    <a href="eventos.html">Eventos</a>
+    <a href="artistas.html">Artistas</a>
+    <a href="convocatoria.html">Convocatoria</a>
+  </div>
+  <span class="footer-copy">© 2026 MRGNT</span>
+</footer>
+
+</div>
+<script src="nav.js"></script>
+<script src="subir-artista.js"></script>
+</body>
+</html>

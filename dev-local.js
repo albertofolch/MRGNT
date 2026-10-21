@@ -23,7 +23,10 @@ const MIME = {
 };
 
 const server = http.createServer((req, res) => {
-  if (req.url.startsWith('/api/')) {
+  const urlPath = req.url.split('?')[0];
+  const isDynamicPage = urlPath === '/evento.html' || urlPath === '/noticia.html' || urlPath === '/artista.html';
+
+  if (req.url.startsWith('/api/') || isDynamicPage) {
     const options = {
       hostname: DEV_HOST,
       path: req.url,

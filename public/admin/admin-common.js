@@ -49,8 +49,9 @@ export function requireAdminSession(allowedRoles = ['admin', 'writer']) {
 export function renderAdminNav(active, role) {
   const links = [];
   if (role === 'admin') links.push(['/admin/artists.html', 'artists', 'Artistas']);
+  if (role === 'admin') links.push(['/admin/artist-submissions.html', 'artist-submissions', 'Solicitudes de artistas']);
   if (role === 'admin') links.push(['/admin/events.html', 'events', 'Eventos']);
-  if (role === 'admin') links.push(['/admin/event-submissions.html', 'submissions', 'Solicitudes']);
+  if (role === 'admin') links.push(['/admin/event-submissions.html', 'submissions', 'Solicitudes de eventos']);
   links.push(['/admin/articles.html', 'articles', 'Noticias']);
   if (role === 'admin') links.push(['/admin/users.html', 'users', 'Usuarios']);
 
