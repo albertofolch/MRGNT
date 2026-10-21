@@ -23,8 +23,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/993617480326/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: firebase-adminsdk-fbsvc@mrgnt-504117.iam.gserviceaccount.com
+          workload_identity_provider: projects/955000045296/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: firebase-adminsdk-fbsvc@mrgnt-webpage.iam.gserviceaccount.com
           create_credentials_file: true
           export_environment_variables: true
 
@@ -33,4 +33,4 @@ jobs:
         working-directory: functions
 
       - name: Deploy dev function and hosting
-        run: npx firebase-tools@14 deploy --only functions:apiDev,hosting:dev --project mrgnt-504117
+        run: npx firebase-tools@14.21.0 deploy --only functions:apiDev,hosting:dev --project mrgnt-webpage --interactive

@@ -6,7 +6,7 @@
 const admin = require('firebase-admin');
 
 admin.initializeApp({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT || 'mrgnt-504117',
+  projectId: process.env.GOOGLE_CLOUD_PROJECT || 'mrgnt-webpage',
 });
 
 const db = admin.firestore();
