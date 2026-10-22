@@ -2,8 +2,8 @@
 
 /* MRGNT — identidad base. Tokens tomados del sistema de diseño MRGNT (tokens.json).
    Solo dos voces (Londrina Solid 900 = cartel, VT323 = máquina), esquinas rectas,
-   sin sombras ni degradados suaves. El tema por defecto es «amarillo» (fondo claro);
-   las secciones alternan amarillo-estrella y papel. */
+   sin sombras ni degradados suaves. El tema por defecto es claro: fondo papel, texto
+   en tinta; las secciones se separan con filetes de 2px. */
 
 :root {
   /* Marca — nunca cambia */
@@ -20,8 +20,8 @@
   --papel: #f4eede;
   --tinta-elevada: #2a2d33;
 
-  /* Semánticos — tema amarillo (por defecto, fondo claro) */
-  --superficie: var(--amarillo-estrella);
+  /* Semánticos — tema claro (por defecto): papel con texto en tinta */
+  --superficie: var(--papel);
   --superficie-elevada: var(--papel);
   --texto-titular: var(--tinta);
   --texto: var(--tinta);
@@ -63,11 +63,11 @@
   --acento: var(--tinta); --borde: var(--tinta);
   background: var(--superficie); color: var(--texto);
 }
-/* Secciones alternas sobre fondo claro: papel en lugar de una zona oscura */
+/* Secciones alternas: mismo fondo papel, separadas por filetes en tinta */
 .mr-zona--papel,
 .section-cream,
 .contact-section {
-  --superficie: var(--papel); --superficie-elevada: var(--amarillo-estrella);
+  --superficie: var(--papel); --superficie-elevada: var(--papel);
   background: var(--superficie); color: var(--texto);
   border-top: var(--filete) solid var(--borde);
   border-bottom: var(--filete) solid var(--borde);
@@ -582,10 +582,10 @@ a.artista-track:hover .artista-track-name { text-decoration: underline; text-und
 .convocatoria-inner p { color: var(--texto); line-height: 1.35; margin: 0; }
 .form-card {
   width: 100%;
-  --superficie: var(--amarillo-estrella); --superficie-elevada: var(--papel);
+  --superficie: var(--papel); --superficie-elevada: var(--papel);
   --texto-titular: var(--tinta); --texto: var(--tinta); --texto-suave: var(--indigo);
   --acento: var(--tinta); --borde: var(--tinta);
-  background: var(--amarillo-estrella);
+  background: var(--papel);
   color: var(--tinta);
 }
 .form-placeholder {
