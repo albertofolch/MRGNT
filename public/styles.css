@@ -2,8 +2,8 @@
 
 /* MRGNT — identidad base. Tokens tomados del sistema de diseño MRGNT (tokens.json).
    Solo dos voces (Londrina Solid 900 = cartel, VT323 = máquina), esquinas rectas,
-   sin sombras ni degradados suaves. El tema por defecto es «tinta»; las secciones
-   alternan zonas tinta / amarillo. */
+   sin sombras ni degradados suaves. El tema por defecto es «amarillo» (fondo claro);
+   las secciones alternan amarillo-estrella y papel. */
 
 :root {
   /* Marca — nunca cambia */
@@ -20,14 +20,14 @@
   --papel: #f4eede;
   --tinta-elevada: #2a2d33;
 
-  /* Semánticos — tema tinta (por defecto) */
-  --superficie: var(--tinta);
-  --superficie-elevada: var(--tinta-elevada);
-  --texto-titular: var(--amarillo-estrella);
-  --texto: var(--papel);
-  --texto-suave: var(--lavanda);
-  --acento: var(--amarillo-estrella);
-  --borde: var(--lavanda);
+  /* Semánticos — tema amarillo (por defecto, fondo claro) */
+  --superficie: var(--amarillo-estrella);
+  --superficie-elevada: var(--papel);
+  --texto-titular: var(--tinta);
+  --texto: var(--tinta);
+  --texto-suave: var(--indigo);
+  --acento: var(--tinta);
+  --borde: var(--tinta);
 
   /* Tipografía */
   --font-display: "Londrina Solid", Impact, sans-serif;
@@ -57,14 +57,20 @@
   --acento: var(--amarillo-estrella); --borde: var(--lavanda);
   background: var(--superficie); color: var(--texto);
 }
-.mr-zona--amarillo,
-.section-cream,
-.contact-section,
-body[data-admin] {
+.mr-zona--amarillo {
   --superficie: var(--amarillo-estrella); --superficie-elevada: var(--papel);
   --texto-titular: var(--tinta); --texto: var(--tinta); --texto-suave: var(--indigo);
   --acento: var(--tinta); --borde: var(--tinta);
   background: var(--superficie); color: var(--texto);
+}
+/* Secciones alternas sobre fondo claro: papel en lugar de una zona oscura */
+.mr-zona--papel,
+.section-cream,
+.contact-section {
+  --superficie: var(--papel); --superficie-elevada: var(--amarillo-estrella);
+  background: var(--superficie); color: var(--texto);
+  border-top: var(--filete) solid var(--borde);
+  border-bottom: var(--filete) solid var(--borde);
 }
 
 * { box-sizing: border-box; }
