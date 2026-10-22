@@ -58,7 +58,7 @@ export function renderAdminNav(active, role) {
   const nav = document.createElement('nav');
   nav.className = 'admin-nav';
   nav.innerHTML = `
-    <a href="/admin/index.html" class="admin-nav-brand">MRGNT admin</a>
+    <a href="/admin/index.html" class="admin-nav-brand"><img src="/assets/mrgnt-logo-tinta.png" alt="MRGNT"><span>Admin</span></a>
     <div class="admin-nav-links">
       ${links.map(([href, key, label]) => `<a href="${href}" class="admin-nav-link${active === key ? ' active' : ''}">${label}</a>`).join('')}
       <button type="button" class="admin-nav-logout" id="admin-logout">Cerrar sesión</button>
