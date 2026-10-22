@@ -8,7 +8,7 @@ const { escapeHtml, stripTags, truncate } = require('../lib/html');
 const router = express.Router();
 
 const SITE_URL = 'https://www.mrgnt.mx';
-const DEFAULT_IMAGE = `${SITE_URL}/assets/logo.png`;
+const DEFAULT_IMAGE = `${SITE_URL}/assets/mrgnt-logo-principal.jpg`;
 const DESCRIPTION_MAX_LENGTH = 200;
 
 const eventoTemplate = fs.readFileSync(path.join(__dirname, '../templates/evento.html'), 'utf8');
