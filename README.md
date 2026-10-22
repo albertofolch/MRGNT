@@ -2,7 +2,7 @@
 
 Site for MRGNT — a festival/collective covering noticias, eventos, artistas, and an open call (convocatoria) — plus an admin panel for managing that content.
 
-Built from the [MRGNT design system](https://claude.ai/code/artifact/4e73a9ea-2324-43f3-85e7-b6564c559261): Londrina Solid 900 + VT323 type, `amarillo-estrella` / `tinta` base palette plus the six «señal» colors, square corners, no shadows. Tokens live at the top of `public/styles.css`; the site uses a light theme: `papel` backgrounds with `tinta` text, sections separated by 2px rules (`.mr-zona--papel`). `.mr-zona--tinta` is available for a dark section if ever needed. Official logos are in `public/assets/mrgnt-logo-*` — never retype «MRGNT» in a font. The public site is plain HTML/CSS/JS with no build step, served from Firebase Hosting. A Firebase Cloud Function (Express app) exposes the JSON API at `/api/*`, backed by Firestore, and powers the `/admin` panel.
+Built from the [MRGNT design system](https://claude.ai/code/artifact/4e73a9ea-2324-43f3-85e7-b6564c559261): Londrina Solid 900 + VT323 type, `amarillo-estrella` / `tinta` base palette plus the six «señal» colors, square corners, no shadows. Tokens live at the top of `public/styles.css`; the site uses a light theme: white (`--blanco`) backgrounds with `tinta` text, sections separated by 2px rules (`.mr-zona--blanco`). `.mr-zona--tinta` is available for a dark section if ever needed. Official logos are in `public/assets/mrgnt-logo-*` — never retype «MRGNT» in a font. The public site is plain HTML/CSS/JS with no build step, served from Firebase Hosting. A Firebase Cloud Function (Express app) exposes the JSON API at `/api/*`, backed by Firestore, and powers the `/admin` panel.
 
 ## Structure
 

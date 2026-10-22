@@ -2,7 +2,7 @@
 
 /* MRGNT — identidad base. Tokens tomados del sistema de diseño MRGNT (tokens.json).
    Solo dos voces (Londrina Solid 900 = cartel, VT323 = máquina), esquinas rectas,
-   sin sombras ni degradados suaves. El tema por defecto es claro: fondo papel, texto
+   sin sombras ni degradados suaves. El tema por defecto es claro: fondo blanco, texto
    en tinta; las secciones se separan con filetes de 2px. */
 
 :root {
@@ -18,11 +18,12 @@
   --lavanda: #7382c8;
   /* Apoyo */
   --papel: #f4eede;
+  --blanco: #ffffff;
   --tinta-elevada: #2a2d33;
 
-  /* Semánticos — tema claro (por defecto): papel con texto en tinta */
-  --superficie: var(--papel);
-  --superficie-elevada: var(--papel);
+  /* Semánticos — tema claro (por defecto): blanco con texto en tinta */
+  --superficie: var(--blanco);
+  --superficie-elevada: var(--blanco);
   --texto-titular: var(--tinta);
   --texto: var(--tinta);
   --texto-suave: var(--indigo);
@@ -63,11 +64,11 @@
   --acento: var(--tinta); --borde: var(--tinta);
   background: var(--superficie); color: var(--texto);
 }
-/* Secciones alternas: mismo fondo papel, separadas por filetes en tinta */
-.mr-zona--papel,
+/* Secciones alternas: mismo fondo blanco, separadas por filetes en tinta */
+.mr-zona--blanco,
 .section-cream,
 .contact-section {
-  --superficie: var(--papel); --superficie-elevada: var(--papel);
+  --superficie: var(--blanco); --superficie-elevada: var(--blanco);
   background: var(--superficie); color: var(--texto);
   border-top: var(--filete) solid var(--borde);
   border-bottom: var(--filete) solid var(--borde);
@@ -582,10 +583,10 @@ a.artista-track:hover .artista-track-name { text-decoration: underline; text-und
 .convocatoria-inner p { color: var(--texto); line-height: 1.35; margin: 0; }
 .form-card {
   width: 100%;
-  --superficie: var(--papel); --superficie-elevada: var(--papel);
+  --superficie: var(--blanco); --superficie-elevada: var(--blanco);
   --texto-titular: var(--tinta); --texto: var(--tinta); --texto-suave: var(--indigo);
   --acento: var(--tinta); --borde: var(--tinta);
-  background: var(--papel);
+  background: var(--blanco);
   color: var(--tinta);
 }
 .form-placeholder {
