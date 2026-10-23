@@ -589,15 +589,11 @@ a.artista-track:hover .artista-track-name { text-decoration: underline; text-und
   background: var(--blanco);
   color: var(--tinta);
 }
-.form-placeholder {
-  border: var(--filete) dashed var(--borde);
-  border-radius: var(--radio-0);
-  padding: 40px 16px;
-  text-align: center;
-  color: var(--texto-suave);
-  font-size: var(--text-sm);
-  letter-spacing: var(--tracking-vt323-min);
-  text-transform: uppercase;
+.form-embed {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  border: none;
 }
 
 /* FOOTER */
