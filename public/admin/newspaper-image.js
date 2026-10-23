@@ -1,5 +1,8 @@
 // Builds "MRGNT newspaper" style images entirely with the Canvas 2D API —
 // no external APIs, no AI, just the text/photos already on the event or article.
+// Styled with the MRGNT design system (see the tokens at the top of /styles.css):
+// Londrina Solid 900 + VT323, tinta/amarillo-estrella, the «señal» stripe, square
+// corners and the official halftone logos.
 
 export const EVENTS_MIN = 3;
 export const EVENTS_MAX = 6;
@@ -11,24 +14,36 @@ const HEIGHT_ARTICLE = 1350;
 const MARGIN = 56;
 
 const COLORS = {
-  paper: '#FFFBF2',
-  ink: '#241206',
-  muted: '#654226',
-  rust: '#C74F24',
+  paper: '#ffffff', // --blanco
+  ink: '#181c22', // --tinta
+  muted: '#3d36cd', // --indigo (texto-suave)
+  accent: '#ffdf70', // --amarillo-estrella
+  papel: '#f4eede', // --papel (text on tinta)
 };
+
+// The six «señal» colors, in the same order as .mr-senal in /styles.css.
+const SENAL = ['#3798ca', '#339b8b', '#7d358f', '#3d36cd', '#384c91', '#7382c8'];
+const SENAL_H = 24;
+
+const DISPLAY = '"Londrina Solid", Impact, sans-serif';
+const MONO = 'VT323, "Courier New", monospace';
+const LEYENDA = 'FESTIVAL DE MÚSICA Y ARTE CONTEMPORÁNEO';
 
 const MONTHS = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 
+// Both families are already requested by the @import at the top of /styles.css.
 async function loadFonts() {
   await Promise.all([
-    document.fonts.load('700 112px Bungee'),
-    document.fonts.load('700 60px Bungee'),
-    document.fonts.load('700 44px Bungee'),
-    document.fonts.load('700 18px "Space Mono"'),
-    document.fonts.load('400 18px "Space Mono"'),
-    document.fonts.load('700 30px "Space Grotesk"'),
-    document.fonts.load('400 18px "Space Grotesk"'),
+    document.fonts.load('900 64px "Londrina Solid"'),
+    document.fonts.load('400 24px VT323'),
   ]).catch(() => {});
+}
+
+// Sets one of the two brand voices. Tracking uses ctx.letterSpacing where the
+// browser supports it; elsewhere it's simply ignored.
+function setFont(ctx, voice, size, tracking = 0) {
+  ctx.font = voice === 'display' ? `900 ${size}px ${DISPLAY}` : `400 ${size}px ${MONO}`;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = `${tracking}px`;
 }
 
 function stripHtml(html) {
@@ -54,12 +69,12 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-function fitFontSize(ctx, text, family, weight, maxWidth, maxSize, minSize) {
+function fitFontSize(ctx, text, voice, tracking, maxWidth, maxSize, minSize) {
   let size = maxSize;
-  ctx.font = `${weight} ${size}px ${family}`;
+  setFont(ctx, voice, size, tracking);
   while (size > minSize && ctx.measureText(text).width > maxWidth) {
     size -= 2;
-    ctx.font = `${weight} ${size}px ${family}`;
+    setFont(ctx, voice, size, tracking);
   }
   return size;
 }
@@ -84,11 +99,19 @@ function loadImage(src) {
   });
 }
 
-const LOGO_SRC = '/assets/logo.png';
-let logoImagePromise = null;
-function getLogoImage() {
-  if (!logoImagePromise) logoImagePromise = loadImage(LOGO_SRC).catch(() => null);
-  return logoImagePromise;
+// Official halftone logos — never retype «MRGNT» in a font.
+const LOGO_SRC = {
+  tinta: '/assets/mrgnt-logo-tinta.png',
+  amarillo: '/assets/mrgnt-logo-amarillo.png',
+};
+const logoImagePromises = {};
+function getLogoImage(variant) {
+  if (!logoImagePromises[variant]) logoImagePromises[variant] = loadImage(LOGO_SRC[variant]).catch(() => null);
+  return logoImagePromises[variant];
+}
+function getLogos() {
+  return Promise.all([getLogoImage('tinta'), getLogoImage('amarillo')])
+    .then(([tinta, amarillo]) => ({ tinta, amarillo }));
 }
 
 function drawCover(ctx, img, x, y, w, h) {
@@ -113,7 +136,35 @@ function drawDoubleRule(ctx, x1, x2, y) {
   drawRule(ctx, x1, x2, y + 7, 2);
 }
 
-// Draws the real MRGNT logo (public/assets/logo.png) at the given top-left corner,
+// Full-width «señal» stripe: the six signal colors with tinta scanlines over them.
+function drawSenal(ctx, width, y, h = SENAL_H) {
+  const segW = width / SENAL.length;
+  SENAL.forEach((color, i) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(Math.floor(i * segW), y, Math.ceil(segW), h);
+  });
+  ctx.fillStyle = 'rgba(24, 28, 34, .35)';
+  for (let ly = y; ly < y + h; ly += 6) ctx.fillRect(0, ly, width, Math.min(2, y + h - ly));
+}
+
+// Tinta box with amarillo VT323 text, like .mrgnt-etiqueta. Returns the box height.
+function drawEtiqueta(ctx, text, x, y, size) {
+  setFont(ctx, 'mono', size, 6);
+  const padX = 16;
+  const padY = 10;
+  const w = ctx.measureText(text).width + padX * 2;
+  const h = size + padY * 2;
+  ctx.fillStyle = COLORS.ink;
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = COLORS.accent;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + padX, y + h / 2 + 2);
+  ctx.textBaseline = 'alphabetic';
+  return h;
+}
+
+// Draws an official MRGNT logo (public/assets/mrgnt-logo-*.png) at the given top-left corner,
 // scaled to logoH tall while keeping its natural aspect ratio. Returns the drawn width.
 function drawLogo(ctx, logoImg, x, y, logoH) {
   if (!logoImg) return 0;
@@ -126,21 +177,22 @@ function drawLogo(ctx, logoImg, x, y, logoH) {
 
 function drawMasthead(ctx, width) {
   const marginX = MARGIN;
-  const y = 56;
+  drawSenal(ctx, width, 0);
+  const y = SENAL_H + 40;
   drawRule(ctx, marginX, width - marginX, y, 2);
   const now = new Date();
   ctx.textBaseline = 'alphabetic';
-  ctx.font = '700 16px "Space Mono", monospace';
+  setFont(ctx, 'mono', 24, 2);
   ctx.fillStyle = COLORS.ink;
   ctx.textAlign = 'left';
-  ctx.fillText('VOL. 01 · EDICIÓN ESPECIAL', marginX, y + 26);
+  ctx.fillText('VOL. 01 · EDICIÓN ESPECIAL', marginX, y + 32);
   ctx.textAlign = 'center';
-  ctx.fillText('@FESTIVALMRGNT', width / 2, y + 26);
+  ctx.fillText('@FESTIVALMRGNT', width / 2, y + 32);
   ctx.textAlign = 'right';
-  ctx.fillText(`${MONTHS[now.getMonth()]} ${now.getFullYear()}`, width - marginX, y + 26);
+  ctx.fillText(`${MONTHS[now.getMonth()]} ${now.getFullYear()}`, width - marginX, y + 32);
   ctx.textAlign = 'left';
-  drawRule(ctx, marginX, width - marginX, y + 40, 2);
-  return y + 40;
+  drawRule(ctx, marginX, width - marginX, y + 46, 2);
+  return y + 46;
 }
 
 // ---- Events front page ----
@@ -148,26 +200,23 @@ function drawMasthead(ctx, width) {
 function drawEventsHeadline(ctx, width, startY) {
   const marginX = MARGIN;
   const maxWidth = width - marginX * 2;
-  let y = startY + 90;
+  let y = startY + 150;
 
   ctx.textAlign = 'left';
   ctx.fillStyle = COLORS.ink;
-  const size1 = fitFontSize(ctx, 'ENTÉRATE DE', 'Bungee, sans-serif', 700, maxWidth, 108, 52);
-  ctx.font = `700 ${size1}px Bungee, sans-serif`;
+  const size1 = fitFontSize(ctx, 'ENTÉRATE DE', 'display', 4, maxWidth, 150, 64);
   ctx.fillText('ENTÉRATE DE', marginX, y);
-  y += size1 + 4;
+  y += size1 * 0.92;
 
-  const size2 = fitFontSize(ctx, 'LA ESCENA', 'Bungee, sans-serif', 700, maxWidth, 108, 52);
-  ctx.font = `700 ${size2}px Bungee, sans-serif`;
+  fitFontSize(ctx, 'LA ESCENA', 'display', 4, maxWidth, 150, 64);
   ctx.fillText('LA ESCENA', marginX, y);
-  y += 44;
+  y += 34;
 
   drawRule(ctx, marginX, width - marginX, y, 3);
-  y += 46;
+  y += 22;
 
-  ctx.font = '700 38px "Space Grotesk", sans-serif';
-  ctx.fillText('ARTÍSTICA EN MÉXICO', marginX, y);
-  y += 26;
+  y += drawEtiqueta(ctx, 'ARTÍSTICA EN MÉXICO', marginX, y, 40);
+  y += 22;
   drawDoubleRule(ctx, marginX, width - marginX, y);
   return y + 36;
 }
@@ -206,74 +255,78 @@ async function drawEventsList(ctx, width, rowsTop, rowsBottom, events) {
 
     ctx.textAlign = 'left';
     ctx.fillStyle = COLORS.ink;
-    ctx.font = '700 52px Bungee, sans-serif';
-    ctx.fillText(ev.dateNum, marginX, rowTop + 58);
-    ctx.font = '700 17px "Space Mono", monospace';
-    ctx.fillText(ev.day, marginX, rowTop + 84);
-    ctx.font = '400 15px "Space Mono", monospace';
+    setFont(ctx, 'display', 72, 2);
+    ctx.fillText(ev.dateNum, marginX, rowTop + 74);
+    setFont(ctx, 'mono', 26, 3);
+    ctx.fillText(ev.day.toUpperCase(), marginX, rowTop + 100);
+    setFont(ctx, 'mono', 24, 1);
     ctx.fillStyle = COLORS.muted;
-    ctx.fillText(ev.time, marginX, rowTop + 105);
+    ctx.fillText(ev.time, marginX, rowTop + 124);
 
     ctx.fillStyle = COLORS.ink;
     ctx.fillRect(marginX + dateColW - 18, rowTop + 8, 2, rowH - 16);
 
-    ctx.font = '700 28px "Space Grotesk", sans-serif';
+    setFont(ctx, 'display', 38, 2);
     ctx.fillStyle = COLORS.ink;
     const titleLines = wrapText(ctx, ev.headline.toUpperCase(), textW).slice(0, 2);
-    let ty = rowTop + 36;
+    let ty = rowTop + 46;
     titleLines.forEach((line) => {
       ctx.fillText(line, textX, ty);
-      ty += 32;
+      ty += 40;
     });
 
-    ty += 8;
-    ctx.font = '400 19px "Space Grotesk", sans-serif';
+    ty += 4;
+    setFont(ctx, 'mono', 25, 1);
     ctx.fillStyle = COLORS.muted;
-    const maxDescLines = Math.max(2, Math.floor((rowTop + rowH - ty) / 25));
+    const maxDescLines = Math.max(2, Math.floor((rowTop + rowH - ty) / 26));
     const descLines = wrapText(ctx, ev.desc, textW).slice(0, maxDescLines);
     descLines.forEach((line) => {
       ctx.fillText(line, textX, ty);
-      ty += 25;
+      ty += 26;
     });
   });
 }
 
+// Tinta band (like .mr-zona--tinta) with the amarillo logo, closed by the «señal» stripe.
 function drawEventsFooter(ctx, width, height, logoImg) {
   const marginX = MARGIN;
-  const topY = height - 210;
-  const bottomRuleY = height - 40;
-  drawDoubleRule(ctx, marginX, width - marginX, topY);
+  const topY = height - 220;
+  const bandBottom = height - SENAL_H;
+  ctx.fillStyle = COLORS.ink;
+  ctx.fillRect(0, topY, width, bandBottom - topY);
+  drawSenal(ctx, width, bandBottom);
 
-  const contentTop = topY + 30;
-  const logoH = 66;
+  const logoH = 128;
+  const contentTop = topY + (bandBottom - topY - logoH) / 2;
   const logoW = drawLogo(ctx, logoImg, marginX, contentTop, logoH);
 
-  const textX = marginX + logoW + (logoW ? 36 : 0);
+  const textX = marginX + logoW + (logoW ? 40 : 0);
   const textMaxWidth = width - marginX - textX;
 
   ctx.textAlign = 'left';
-  ctx.fillStyle = COLORS.ink;
-  ctx.font = '700 22px "Space Grotesk", sans-serif';
-  ctx.fillText('APOYA. ASISTE.', textX, contentTop + 24);
-  ctx.fillText('HAZ ESCENA.', textX, contentTop + 52);
+  ctx.fillStyle = COLORS.accent;
+  setFont(ctx, 'display', 44, 3);
+  ctx.fillText('APOYA. ASISTE. HAZ ESCENA.', textX, contentTop + 40);
 
-  ctx.font = '400 17px "Space Grotesk", sans-serif';
-  ctx.fillStyle = COLORS.muted;
+  setFont(ctx, 'mono', 23, 0);
+  ctx.fillStyle = COLORS.papel;
   const taglineLines = wrapText(ctx, 'La cultura se vive, se comparte y se construye juntos. Nos vemos ahí.', textMaxWidth).slice(0, 2);
-  let ly = contentTop + 80;
+  let ly = contentTop + 76;
   taglineLines.forEach((line) => {
     ctx.fillText(line, textX, ly);
-    ly += 21;
+    ly += 26;
   });
 
-  drawRule(ctx, marginX, width - marginX, bottomRuleY, 2);
+  setFont(ctx, 'mono', 20, 4);
+  ctx.fillStyle = COLORS.accent;
+  ctx.fillText(LEYENDA, textX, Math.max(contentTop + logoH - 4, ly + 6));
 }
 
 export async function generateEventsNewspaperImage(events) {
   if (!Array.isArray(events) || events.length < EVENTS_MIN || events.length > EVENTS_MAX) {
     throw new Error(`Selecciona entre ${EVENTS_MIN} y ${EVENTS_MAX} eventos.`);
   }
-  const [, logoImg] = await Promise.all([loadFonts(), getLogoImage()]);
+  const [, logos] = await Promise.all([loadFonts(), getLogos()]);
 
   const canvas = document.createElement('canvas');
   canvas.width = WIDTH_EVENTS;
@@ -285,7 +338,7 @@ export async function generateEventsNewspaperImage(events) {
   let y = drawMasthead(ctx, WIDTH_EVENTS);
   y = drawEventsHeadline(ctx, WIDTH_EVENTS, y);
 
-  const footerTop = HEIGHT_EVENTS - 250;
+  const footerTop = HEIGHT_EVENTS - 256;
   const mapped = events.map((ev) => ({
     dateNum: (ev.date || '').split(' ')[0] || '',
     day: ev.day || '',
@@ -296,7 +349,7 @@ export async function generateEventsNewspaperImage(events) {
   }));
 
   await drawEventsList(ctx, WIDTH_EVENTS, y, footerTop, mapped);
-  drawEventsFooter(ctx, WIDTH_EVENTS, HEIGHT_EVENTS, logoImg);
+  drawEventsFooter(ctx, WIDTH_EVENTS, HEIGHT_EVENTS, logos.amarillo);
 
   return canvas.toDataURL('image/png');
 }
@@ -304,19 +357,25 @@ export async function generateEventsNewspaperImage(events) {
 // ---- Article page ----
 
 function drawArticleHeader(ctx, width, logoImg) {
-  const y = 56;
-  const logoH = 52;
+  drawSenal(ctx, width, 0);
+  const y = SENAL_H + 32;
+  const logoH = 96;
   const logoW = logoImg ? logoH * (logoImg.width / logoImg.height) : 0;
   if (logoImg) ctx.drawImage(logoImg, (width - logoW) / 2, y, logoW, logoH);
-  const ruleY = y + logoH + 24;
+  setFont(ctx, 'mono', 20, 4);
+  ctx.fillStyle = COLORS.ink;
+  ctx.textAlign = 'center';
+  ctx.fillText(LEYENDA, width / 2, y + logoH + 26);
+  ctx.textAlign = 'left';
+  const ruleY = y + logoH + 44;
   drawRule(ctx, MARGIN, width - MARGIN, ruleY, 2);
   return ruleY;
 }
 
 function drawArticleByline(ctx, width, y0, author, dateDisplay) {
   const marginX = MARGIN;
-  const y = y0 + 38;
-  ctx.font = '700 17px "Space Mono", monospace';
+  const y = y0 + 34;
+  setFont(ctx, 'mono', 24, 3);
   ctx.fillStyle = COLORS.ink;
   ctx.textAlign = 'left';
   ctx.fillText((author || 'MRGNT').toUpperCase(), marginX, y);
@@ -330,23 +389,23 @@ function drawArticleByline(ctx, width, y0, author, dateDisplay) {
 function drawArticleHeadline(ctx, width, y0, title) {
   const marginX = MARGIN;
   const maxWidth = width - marginX * 2;
-  let size = 52;
+  let size = 76;
   let lines = [];
   do {
-    ctx.font = `700 ${size}px Bungee, sans-serif`;
+    setFont(ctx, 'display', size, 2);
     lines = wrapText(ctx, title.toUpperCase(), maxWidth);
     size -= 4;
-  } while (lines.length > 3 && size > 28);
+  } while (lines.length > 3 && size > 40);
   size += 4;
-  ctx.font = `700 ${size}px Bungee, sans-serif`;
+  setFont(ctx, 'display', size, 2);
 
-  let y = y0 + size + 20;
+  let y = y0 + size + 12;
   ctx.fillStyle = COLORS.ink;
   lines.slice(0, 3).forEach((line) => {
     ctx.fillText(line, marginX, y);
-    y += size + 8;
+    y += size;
   });
-  return y - (size + 8) + 28;
+  return y - size + 26;
 }
 
 function drawArticleSummary(ctx, width, y0, text) {
@@ -354,18 +413,18 @@ function drawArticleSummary(ctx, width, y0, text) {
   const boxX = marginX;
   const boxW = width - marginX * 2;
   const padX = 24;
-  const padY = 22;
-  const lineHeight = 26;
+  const padY = 20;
+  const lineHeight = 28;
   const textW = boxW - padX * 2;
 
-  ctx.font = '700 20px "Space Grotesk", sans-serif';
+  setFont(ctx, 'mono', 27, 2);
   const lines = wrapText(ctx, text.toUpperCase(), textW);
   const boxH = padY * 2 + lines.length * lineHeight;
 
   ctx.fillStyle = COLORS.ink;
   ctx.fillRect(boxX, y0, boxW, boxH);
 
-  ctx.fillStyle = COLORS.paper;
+  ctx.fillStyle = COLORS.accent;
   ctx.textAlign = 'left';
   let ty = y0 + padY + lineHeight - 8;
   lines.forEach((line) => {
@@ -384,7 +443,7 @@ function drawArticleColumns(ctx, width, y0, text, colHeight) {
   const lineHeight = 24;
   const maxLinesPerCol = Math.max(1, Math.floor(colHeight / lineHeight));
 
-  ctx.font = '400 17px "Space Grotesk", sans-serif';
+  setFont(ctx, 'mono', 23, 0);
   ctx.fillStyle = COLORS.ink;
   const allLines = wrapText(ctx, text, colW);
   const total = maxLinesPerCol * colCount;
@@ -408,23 +467,27 @@ function drawArticleColumns(ctx, width, y0, text, colHeight) {
   return y0 + colHeight;
 }
 
+// Tinta band with the amarillo call to action, closed by the «señal» stripe.
 function drawArticleFooter(ctx, width, height) {
-  const marginX = MARGIN;
-  const ruleY = height - 70;
-  drawDoubleRule(ctx, marginX, width - marginX, ruleY - 32);
+  const bandTop = height - 86;
+  const bandBottom = height - SENAL_H;
+  ctx.fillStyle = COLORS.ink;
+  ctx.fillRect(0, bandTop, width, bandBottom - bandTop);
+  drawSenal(ctx, width, bandBottom);
   ctx.textAlign = 'center';
-  ctx.font = '700 19px "Space Mono", monospace';
-  ctx.fillStyle = COLORS.rust;
-  ctx.fillText('✱  LEER ARTÍCULO COMPLETO EN WWW.MRGNT.MX  ✱', width / 2, ruleY);
+  ctx.textBaseline = 'middle';
+  setFont(ctx, 'mono', 30, 6);
+  ctx.fillStyle = COLORS.accent;
+  ctx.fillText('LEER ARTÍCULO COMPLETO EN WWW.MRGNT.MX »', width / 2, (bandTop + bandBottom) / 2 + 2);
+  ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
-  drawRule(ctx, marginX, width - marginX, ruleY + 20, 2);
 }
 
 // photoSource: { src } — a photo is required (matches the "cover photo" requirement on articles)
 export async function generateArticleNewspaperImage({ title, author, dateDisplay, bodyHtml, excerpt, photoSource }) {
   if (!title || !title.trim()) throw new Error('Escribe un título antes de generar la imagen.');
   if (!photoSource) throw new Error('Sube una foto (no video) para generar la imagen.');
-  const [, logoImg] = await Promise.all([loadFonts(), getLogoImage()]);
+  const [, logos] = await Promise.all([loadFonts(), getLogos()]);
 
   const canvas = document.createElement('canvas');
   canvas.width = WIDTH_ARTICLE;
@@ -433,7 +496,7 @@ export async function generateArticleNewspaperImage({ title, author, dateDisplay
   ctx.fillStyle = COLORS.paper;
   ctx.fillRect(0, 0, WIDTH_ARTICLE, HEIGHT_ARTICLE);
 
-  let y = drawArticleHeader(ctx, WIDTH_ARTICLE, logoImg);
+  let y = drawArticleHeader(ctx, WIDTH_ARTICLE, logos.tinta);
   y = drawArticleByline(ctx, WIDTH_ARTICLE, y, author, dateDisplay);
   y = drawArticleHeadline(ctx, WIDTH_ARTICLE, y, title.trim());
 
@@ -445,7 +508,7 @@ export async function generateArticleNewspaperImage({ title, author, dateDisplay
   const bodyText = stripHtml(bodyHtml) || (excerpt || '').trim();
   const img = await loadImage(photoSource.src);
 
-  const footerTop = HEIGHT_ARTICLE - 110;
+  const footerTop = HEIGHT_ARTICLE - 96;
   const remaining = Math.max(180, footerTop - y - 40);
   const colHeight = Math.round(remaining * 0.5);
   const photoHeight = Math.max(120, remaining - colHeight - 24);
