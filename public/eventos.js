@@ -50,8 +50,8 @@ function renderEventos(events) {
         <div class="event-main">
           <span class="event-artist">${ev.artist}</span>
           <span class="event-stage">${ev.stage}</span>
+          ${ev.tag ? `<span class="event-tag">${ev.tag}</span>` : ''}
         </div>
-        ${ev.tag ? `<span class="event-tag">${ev.tag}</span>` : ''}
       `;
       list.appendChild(row);
     });
