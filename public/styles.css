@@ -592,7 +592,6 @@ a.artista-track:hover .artista-track-name { text-decoration: underline; text-und
 .form-embed {
   display: block;
   width: 100%;
-  max-width: 640px;
   border: none;
 }
 
@@ -844,8 +843,9 @@ select.submit-input {
 .submit-spotify-preview-tracks { margin: 4px 0 0; padding-left: 18px; font-size: var(--text-base); color: var(--texto-suave); }
 
 /* CONVOCATORIA PAGE */
-.convocatoria-page .convocatoria-inner { margin: 0; align-items: flex-start; text-align: left; max-width: 640px; }
+.convocatoria-page .convocatoria-inner { margin: 0; align-items: flex-start; text-align: left; max-width: none; width: 100%; }
 .convocatoria-page .form-card { width: 100%; }
+body[data-page="convocatoria"] .page-header p { max-width: none; }
 
 @media (max-width: 600px) {
   .hero { padding: var(--espacio-3) var(--espacio-2); }
