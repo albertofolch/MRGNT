@@ -6,6 +6,12 @@
       "runtimeExecutable": "firebase",
       "runtimeArgs": ["emulators:start", "--import=./emulator-data", "--export-on-exit"],
       "port": 5050
+    },
+    {
+      "name": "mrgnt-local",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["dev-local.js"],
+      "port": 3000
     }
   ]
 }
