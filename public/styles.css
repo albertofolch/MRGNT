@@ -33,6 +33,7 @@
   /* Tipografía */
   --font-display: "Londrina Solid", Impact, sans-serif;
   --font-mono: VT323, "Courier New", monospace;
+  --font-texto: Arial, "Helvetica Neue", Helvetica, sans-serif; /* texto corrido: notas y biografías */
   --tracking-londrina-min: 2px;
   --tracking-londrina-max: 6px;
   --tracking-vt323-min: 6px;
@@ -351,6 +352,11 @@ section.section { padding: var(--margen-lienzo) var(--espacio-3); }
 }
 .post-card h3 a { color: inherit; text-decoration: none; }
 .post-card h3 a:hover { text-decoration: underline; }
+/* La tarjeta completa es el enlace: el ::after del título se estira sobre toda la tarjeta */
+.post-card, .article-card { position: relative; }
+.post-card h3 a::after, .article-card h3 a::after { content: ""; position: absolute; inset: 0; }
+.post-card:hover h3 a, .article-card:hover h3 a { text-decoration: underline; }
+.post-card:has(h3 a:focus-visible), .article-card:has(h3 a:focus-visible) { outline: 2px solid var(--acento); outline-offset: 2px; }
 .post-excerpt {
   font-size: var(--text-base);
   line-height: 1.35;
@@ -698,7 +704,7 @@ a.artista-track:hover .artista-track-name { text-decoration: underline; text-und
 .noticia-media img, .noticia-media video { width: 100%; border-radius: var(--radio-0); display: block; }
 .noticia-embed { display: flex; justify-content: center; }
 .noticia-embed .embed-youtube { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--radio-0); }
-.noticia-body { font-size: var(--text-md); color: var(--texto); line-height: 1.35; display: flex; flex-direction: column; gap: var(--espacio-2); }
+.noticia-body { font-family: var(--font-texto); font-size: 18px; letter-spacing: normal; color: var(--texto); line-height: 1.6; display: flex; flex-direction: column; gap: var(--espacio-2); }
 .noticia-body p, .noticia-body ul, .noticia-body ol, .noticia-body blockquote { margin: 0; }
 .evento-image { width: 100%; border-radius: var(--radio-0); display: block; }
 .evento-cost { font-size: var(--text-md); letter-spacing: var(--tracking-vt323-min); text-transform: uppercase; color: var(--texto-titular); margin: 0; }
