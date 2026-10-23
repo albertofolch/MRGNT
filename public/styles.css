@@ -33,6 +33,7 @@
   /* Tipografía */
   --font-display: "Londrina Solid", Impact, sans-serif;
   --font-mono: VT323, "Courier New", monospace;
+  --font-texto: Arial, "Helvetica Neue", Helvetica, sans-serif; /* texto corrido: notas y biografías */
   --tracking-londrina-min: 2px;
   --tracking-londrina-max: 6px;
   --tracking-vt323-min: 6px;
@@ -703,7 +704,7 @@ a.artista-track:hover .artista-track-name { text-decoration: underline; text-und
 .noticia-media img, .noticia-media video { width: 100%; border-radius: var(--radio-0); display: block; }
 .noticia-embed { display: flex; justify-content: center; }
 .noticia-embed .embed-youtube { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--radio-0); }
-.noticia-body { font-size: var(--text-md); color: var(--texto); line-height: 1.35; display: flex; flex-direction: column; gap: var(--espacio-2); }
+.noticia-body { font-family: var(--font-texto); font-size: 18px; letter-spacing: normal; color: var(--texto); line-height: 1.6; display: flex; flex-direction: column; gap: var(--espacio-2); }
 .noticia-body p, .noticia-body ul, .noticia-body ol, .noticia-body blockquote { margin: 0; }
 .evento-image { width: 100%; border-radius: var(--radio-0); display: block; }
 .evento-cost { font-size: var(--text-md); letter-spacing: var(--tracking-vt323-min); text-transform: uppercase; color: var(--texto-titular); margin: 0; }
