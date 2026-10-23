@@ -351,6 +351,11 @@ section.section { padding: var(--margen-lienzo) var(--espacio-3); }
 }
 .post-card h3 a { color: inherit; text-decoration: none; }
 .post-card h3 a:hover { text-decoration: underline; }
+/* La tarjeta completa es el enlace: el ::after del título se estira sobre toda la tarjeta */
+.post-card, .article-card { position: relative; }
+.post-card h3 a::after, .article-card h3 a::after { content: ""; position: absolute; inset: 0; }
+.post-card:hover h3 a, .article-card:hover h3 a { text-decoration: underline; }
+.post-card:has(h3 a:focus-visible), .article-card:has(h3 a:focus-visible) { outline: 2px solid var(--acento); outline-offset: 2px; }
 .post-excerpt {
   font-size: var(--text-base);
   line-height: 1.35;
