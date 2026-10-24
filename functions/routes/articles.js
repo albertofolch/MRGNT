@@ -7,12 +7,17 @@ const { deleteMediaFile } = require('../storage');
 const { slugify } = require('../lib/slugify');
 const { sanitizeRichText } = require('../lib/sanitize');
 const { detectEmbedProvider } = require('../lib/embeds');
+const { setPublicCache } = require('../lib/cache');
 
 const router = express.Router();
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-function toClient(doc) {
+// Link-preview fetchers and crawlers that run JavaScript shouldn't count as readers.
+const BOT_UA_RE = /bot|crawl|spider|slurp|preview|facebookexternalhit|headless|lighthouse/i;
+
+// `views` is only sent to the admin panel; the public list stays free of it.
+function toClient(doc, { withViews = true } = {}) {
   const d = doc.data();
   return {
     id: doc.id,
@@ -30,6 +35,7 @@ function toClient(doc) {
     embedProvider: d.embed_provider || null,
     status: d.status === 'published' ? 'published' : 'draft',
     createdBy: d.created_by || null,
+    ...(withViews ? { views: d.views || 0 } : {}),
   };
 }
 
@@ -57,7 +63,8 @@ router.get('/', async (req, res) => {
     let query = admin.firestore().collection('articles').orderBy('article_date', 'desc');
     if (!role) query = query.where('status', '==', 'published');
     const snap = await query.get();
-    res.json(snap.docs.map(toClient));
+    setPublicCache(req, res);
+    res.json(snap.docs.map((doc) => toClient(doc, { withViews: Boolean(role) })));
   } catch {
     res.status(500).json({ error: 'Error al obtener artículos' });
   }
@@ -198,13 +205,16 @@ router.put('/:id', requireAuth, async (req, res) => {
     } else {
       let slug = newBaseSlug;
       await admin.firestore().runTransaction(async (tx) => {
+        // Read the view count inside the transaction so reads recorded mid-rename aren't lost.
+        const current = await tx.get(oldRef);
+        const views = (current.exists && current.data().views) || 0;
         let n = 2;
         for (let attempt = 0; attempt < 20; attempt++) {
           const newRef = col.doc(slug);
           const snap = await tx.get(newRef);
           if (!snap.exists) {
             tx.delete(oldRef);
-            tx.set(newRef, docData);
+            tx.set(newRef, { ...docData, views });
             finalRef = newRef;
             return;
           }
@@ -237,6 +247,22 @@ router.delete('/:id', requireAuth, async (req, res) => {
   } catch {
     res.status(500).json({ error: 'Error al eliminar artículo' });
   }
+});
+
+// Public: called once per browser per article by noticia.js. Always answers 204 so it
+// reveals nothing about drafts; only published articles are counted.
+router.post('/:id/view', async (req, res) => {
+  if (BOT_UA_RE.test(req.headers['user-agent'] || '')) return res.status(204).end();
+  try {
+    const ref = admin.firestore().collection('articles').doc(req.params.id);
+    const snap = await ref.get();
+    if (snap.exists && snap.data().status === 'published') {
+      await ref.update({ views: admin.firestore.FieldValue.increment(1) });
+    }
+  } catch {
+    // A missed count isn't worth surfacing to the reader.
+  }
+  res.status(204).end();
 });
 
 router.post('/:id/publish', requireAdmin, async (req, res) => {

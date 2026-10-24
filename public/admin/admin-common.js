@@ -41,6 +41,12 @@ export function requireAdminSession(allowedRoles = ['admin', 'writer']) {
         window.location.href = '/admin/index.html';
         return resolve(null);
       }
+      // Marks this browser as the team's so noticia.js stops counting its reads.
+      try {
+        localStorage.setItem('mrgnt_staff', '1');
+      } catch {
+        // Storage blocked: reads from this browser may be counted.
+      }
       resolve({ user, role });
     });
   });
