@@ -8,6 +8,7 @@ const { detectEmbedProvider } = require('../lib/embeds');
 const { resolveMapsEmbedUrl } = require('../lib/maps');
 const { saveEventImage } = require('../lib/images');
 const { deleteMediaFile } = require('../storage');
+const { setPublicCache } = require('../lib/cache');
 
 const router = express.Router();
 
@@ -111,6 +112,7 @@ async function createEventDoc(docData) {
 router.get('/', async (req, res) => {
   try {
     const snap = await admin.firestore().collection('events').orderBy('event_date').get();
+    setPublicCache(req, res);
     res.json(snap.docs.map(toClient));
   } catch {
     res.status(500).json({ error: 'Error al obtener eventos' });

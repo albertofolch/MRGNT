@@ -4,6 +4,7 @@ const { requireAdmin } = require('../auth');
 const { DISCIPLINES } = require('../constants');
 const { sanitizeRichText } = require('../lib/sanitize');
 const { slugify } = require('../lib/slugify');
+const { setPublicCache } = require('../lib/cache');
 
 const router = express.Router();
 
@@ -53,6 +54,7 @@ function validate(body) {
 router.get('/', async (req, res) => {
   try {
     const snap = await admin.firestore().collection('artists').orderBy('createdAt').get();
+    setPublicCache(req, res);
     res.json(snap.docs.map(toClient));
   } catch {
     res.status(500).json({ error: 'Error al obtener artistas' });

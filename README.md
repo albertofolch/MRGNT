@@ -29,6 +29,10 @@ Log in at `/admin/login.html` to add, edit, or delete artistas, eventos, and not
 
 Each noticia has: Título, Categoría, Fecha, Autor, Resumen (short excerpt shown in listings), Nota (the full article body, shown on its own page), and an optional Media upload (one image or video). Clicking a noticia's title anywhere on the public site opens its detail page at `/noticia.html?slug=...`. Uploaded media files are stored in Firebase Storage.
 
+**Lecturas (read counter).** Every published noticia in the admin list shows how many people have read it, and the «Más leídos» filter sorts them by that count. A read is counted once per browser per article, so reloads don't add more. Browsers that have signed in to the admin panel and known crawlers aren't counted. Counting started when this feature shipped, so older articles start from 0.
+
+**Caching.** Public pages and the `/api/articles`, `/api/events`, `/api/artists` and `/api/meta` lists are cached by Firebase Hosting's CDN for up to 5 minutes (`functions/lib/cache.js`), which keeps Firestore reads flat as traffic grows. Edits, publishes and deletions can take up to 5 minutes to show on the public site. The admin panel is never cached and always shows changes immediately.
+
 Each artista has an optional Spotify link — pick a result from the built-in Spotify search or paste an artist ID/URL — which powers the artist photo, Spotify player, and top tracks on their public page.
 
 ## Deployment

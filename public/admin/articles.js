@@ -126,6 +126,9 @@ function canEdit(article) {
 function filteredArticles() {
   if (statusFilter === 'published') return articles.filter((a) => a.status === 'published');
   if (statusFilter === 'draft') return articles.filter((a) => a.status !== 'published');
+  if (statusFilter === 'popular') {
+    return articles.filter((a) => a.status === 'published').sort((a, b) => b.views - a.views);
+  }
   return articles;
 }
 
@@ -157,11 +160,14 @@ function renderList() {
       ? '<span class="admin-status-badge admin-status-published">Publicado</span>'
       : '<span class="admin-status-badge admin-status-draft">Sin publicar</span>';
     const editable = canEdit(article);
+    const views = article.status === 'published'
+      ? ` · ${article.views.toLocaleString('es-MX')} ${article.views === 1 ? 'lectura' : 'lecturas'}`
+      : '';
     row.innerHTML = `
       ${thumb}
       <div class="admin-row-main">
         <div class="admin-row-title">${article.title} ${statusBadge}</div>
-        <div class="admin-row-sub">${article.category} — ${article.author} · ${article.date}</div>
+        <div class="admin-row-sub">${article.category} — ${article.author} · ${article.date}${views}</div>
       </div>
       <div class="admin-row-actions">
         ${article.status === 'published' ? `<a href="/noticia.html?slug=${encodeURIComponent(article.slug)}" target="_blank">Ver</a>` : ''}
