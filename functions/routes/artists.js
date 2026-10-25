@@ -1,10 +1,11 @@
 const express = require('express');
 const admin = require('firebase-admin');
-const { requireAdmin } = require('../auth');
+const { requireAdmin, resolveRole, decodeToken } = require('../auth');
 const { DISCIPLINES } = require('../constants');
 const { sanitizeRichText } = require('../lib/sanitize');
 const { slugify } = require('../lib/slugify');
 const { setPublicCache } = require('../lib/cache');
+const { recordView } = require('../lib/views');
 
 const router = express.Router();
 
@@ -28,7 +29,8 @@ function normalizeSpotifyId(input) {
   return { id: null, error: 'ID o URL de Spotify inválido' };
 }
 
-function toClient(doc) {
+// `views` is only sent to the admin panel; the public list stays free of it.
+function toClient(doc, { withViews = true } = {}) {
   const d = doc.data();
   return {
     id: doc.id,
@@ -40,6 +42,7 @@ function toClient(doc) {
     bio: d.bio || null,
     spotifyArtistId: d.spotify_artist_id || null,
     showSpotifyEmbed: d.show_spotify_embed === true,
+    ...(withViews ? { views: d.views || 0 } : {}),
   };
 }
 
@@ -53,9 +56,11 @@ function validate(body) {
 
 router.get('/', async (req, res) => {
   try {
+    const decoded = await decodeToken(req);
+    const role = decoded && resolveRole(decoded);
     const snap = await admin.firestore().collection('artists').orderBy('createdAt').get();
     setPublicCache(req, res);
-    res.json(snap.docs.map(toClient));
+    res.json(snap.docs.map((doc) => toClient(doc, { withViews: Boolean(role) })));
   } catch {
     res.status(500).json({ error: 'Error al obtener artistas' });
   }
@@ -148,6 +153,12 @@ router.put('/:id', requireAdmin, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message || 'Error al actualizar artista' });
   }
+});
+
+// Public: called once per browser per artist by artista.js.
+router.post('/:id/view', (req, res) => {
+  const ref = admin.firestore().collection('artists').doc(req.params.id);
+  return recordView(req, res, ref);
 });
 
 router.delete('/:id', requireAdmin, async (req, res) => {

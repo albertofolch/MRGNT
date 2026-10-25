@@ -8,13 +8,11 @@ const { slugify } = require('../lib/slugify');
 const { sanitizeRichText } = require('../lib/sanitize');
 const { detectEmbedProvider } = require('../lib/embeds');
 const { setPublicCache } = require('../lib/cache');
+const { recordView } = require('../lib/views');
 
 const router = express.Router();
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-// Link-preview fetchers and crawlers that run JavaScript shouldn't count as readers.
-const BOT_UA_RE = /bot|crawl|spider|slurp|preview|facebookexternalhit|headless|lighthouse/i;
 
 // `views` is only sent to the admin panel; the public list stays free of it.
 function toClient(doc, { withViews = true } = {}) {
@@ -249,20 +247,10 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Public: called once per browser per article by noticia.js. Always answers 204 so it
-// reveals nothing about drafts; only published articles are counted.
-router.post('/:id/view', async (req, res) => {
-  if (BOT_UA_RE.test(req.headers['user-agent'] || '')) return res.status(204).end();
-  try {
-    const ref = admin.firestore().collection('articles').doc(req.params.id);
-    const snap = await ref.get();
-    if (snap.exists && snap.data().status === 'published') {
-      await ref.update({ views: admin.firestore.FieldValue.increment(1) });
-    }
-  } catch {
-    // A missed count isn't worth surfacing to the reader.
-  }
-  res.status(204).end();
+// Public: called once per browser per article by noticia.js; only published articles count.
+router.post('/:id/view', (req, res) => {
+  const ref = admin.firestore().collection('articles').doc(req.params.id);
+  return recordView(req, res, ref, (d) => d.status === 'published');
 });
 
 router.post('/:id/publish', requireAdmin, async (req, res) => {

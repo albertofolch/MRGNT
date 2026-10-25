@@ -7,6 +7,7 @@ const SPOTIFY_ARTIST_HOSTS = ['open.spotify.com', 'spotify.link'];
 
 let artists = [];
 let editingId = null;
+let listFilter = 'all';
 let spotifyPreviewTimer = null;
 let spotifySearchTimer = null;
 
@@ -212,19 +213,25 @@ function startEdit(artist) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function filteredArtists() {
+  if (listFilter === 'popular') return [...artists].sort((a, b) => b.views - a.views);
+  return artists;
+}
+
 function renderList() {
   listEl.innerHTML = '';
   if (!artists.length) {
     listEl.innerHTML = '<p class="admin-empty">Aún no hay artistas.</p>';
     return;
   }
-  artists.forEach((artist) => {
+  filteredArtists().forEach((artist) => {
     const row = document.createElement('div');
     row.className = 'admin-row';
+    const views = `${artist.views.toLocaleString('es-MX')} ${artist.views === 1 ? 'visita' : 'visitas'}`;
     row.innerHTML = `
       <div class="admin-row-main">
         <div class="admin-row-title">${artist.name}${artist.featured ? ' · Featured' : ''}</div>
-        <div class="admin-row-sub">${artist.discipline} — ${artist.genre || 'Sin género'}</div>
+        <div class="admin-row-sub">${artist.discipline} — ${artist.genre || 'Sin género'} · ${views}</div>
       </div>
       <div class="admin-row-actions">
         <button type="button" class="admin-edit">Editar</button>
@@ -278,6 +285,14 @@ form.addEventListener('submit', async (e) => {
 });
 
 cancelBtn.addEventListener('click', resetForm);
+
+document.querySelectorAll('.admin-filter-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    listFilter = btn.dataset.filter;
+    document.querySelectorAll('.admin-filter-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    renderList();
+  });
+});
 
 requireAdminSession(['admin']).then(async (session) => {
   if (!session) return;
