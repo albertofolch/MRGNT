@@ -6,7 +6,7 @@ Built from the [MRGNT design system](https://claude.ai/code/artifact/4e73a9ea-23
 
 ## Structure
 
-- `public/` — the public site (`index.html`, `noticias.html`, `eventos.html`, `artistas.html`, `convocatoria.html`, their renderer scripts, `styles.css`, `nav.js`, `assets/logo.png`) and the `admin/` panel (login, dashboard, CRUD pages for artistas/eventos/noticias). Renderer scripts fetch content from the API at `/api/*` instead of hardcoded data.
+- `public/` — the public site (`index.html`, `noticias.html`, `eventos.html`, `eventos-archivo.html` (past events, newest first), `artistas.html`, `convocatoria.html`, their renderer scripts, `styles.css`, `nav.js`, `assets/logo.png`) and the `admin/` panel (login, dashboard, CRUD pages for artistas/eventos/noticias). Renderer scripts fetch content from the API at `/api/*` instead of hardcoded data.
 - `functions/` — the Cloud Function (Express app): routes (`functions/routes/*`), Firestore/Auth/Storage access via `firebase-admin`, secrets (`functions/secrets.js` — Spotify and Google Maps API credentials), and one-off migration/backfill scripts (`functions/scripts/*`).
 - `firestore.rules`, `firestore.indexes.json`, `storage.rules` — Firestore and Storage security rules and indexes.
 - `dev-local.js` — a tiny static file server for local iteration; proxies `/api/*` requests to the deployed dev environment instead of running functions locally.
