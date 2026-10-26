@@ -27,10 +27,22 @@ function renderEventos(events) {
   const container = document.getElementById('eventos-groups');
   container.innerHTML = '';
 
+  // The archive page (eventos-archivo.html) lists past events, newest first.
+  const isArchive = document.body.dataset.archive === 'true';
   const today = todayISO();
-  const upcoming = events.filter((ev) => ev.event_date >= today);
+  const visible = isArchive
+    ? events.filter((ev) => ev.event_date < today).reverse()
+    : events.filter((ev) => ev.event_date >= today);
 
-  groupEventsByMonth(upcoming).forEach((group) => {
+  if (!visible.length) {
+    const empty = document.createElement('p');
+    empty.className = 'eventos-empty';
+    empty.textContent = isArchive ? 'Todavía no hay eventos pasados en el archivo.' : 'No hay próximos eventos por ahora.';
+    container.appendChild(empty);
+    return;
+  }
+
+  groupEventsByMonth(visible).forEach((group) => {
     const monthEl = document.createElement('div');
     monthEl.className = 'eventos-month';
 
