@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /admin
+Disallow: /subir-artista.html
+Disallow: /subir-evento.html
+
+Sitemap: https://www.mrgnt.mx/sitemap.xml
