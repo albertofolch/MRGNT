@@ -21,7 +21,17 @@
           "region": "us-central1"
         },
         {
+          "source": "/noticias.html",
+          "function": "api",
+          "region": "us-central1"
+        },
+        {
           "source": "/artista.html",
+          "function": "api",
+          "region": "us-central1"
+        },
+        {
+          "source": "/sitemap.xml",
           "function": "api",
           "region": "us-central1"
         }
@@ -48,7 +58,17 @@
           "region": "us-central1"
         },
         {
+          "source": "/noticias.html",
+          "function": "apiDev",
+          "region": "us-central1"
+        },
+        {
           "source": "/artista.html",
+          "function": "apiDev",
+          "region": "us-central1"
+        },
+        {
+          "source": "/sitemap.xml",
           "function": "apiDev",
           "region": "us-central1"
         }

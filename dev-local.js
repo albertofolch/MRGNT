@@ -24,7 +24,7 @@ const MIME = {
 
 const server = http.createServer((req, res) => {
   const urlPath = req.url.split('?')[0];
-  const isDynamicPage = urlPath === '/evento.html' || urlPath === '/noticia.html' || urlPath === '/artista.html';
+  const isDynamicPage = urlPath === '/evento.html' || urlPath === '/noticia.html' || urlPath === '/noticias.html' || urlPath === '/artista.html' || urlPath === '/sitemap.xml';
 
   if (req.url.startsWith('/api/') || isDynamicPage) {
     const options = {
