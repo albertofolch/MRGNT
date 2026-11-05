@@ -26,7 +26,17 @@
           "region": "us-central1"
         },
         {
+          "source": "/eventos.html",
+          "function": "api",
+          "region": "us-central1"
+        },
+        {
           "source": "/artista.html",
+          "function": "api",
+          "region": "us-central1"
+        },
+        {
+          "source": "/artistas.html",
           "function": "api",
           "region": "us-central1"
         },
@@ -63,7 +73,17 @@
           "region": "us-central1"
         },
         {
+          "source": "/eventos.html",
+          "function": "apiDev",
+          "region": "us-central1"
+        },
+        {
           "source": "/artista.html",
+          "function": "apiDev",
+          "region": "us-central1"
+        },
+        {
+          "source": "/artistas.html",
           "function": "apiDev",
           "region": "us-central1"
         },
