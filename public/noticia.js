@@ -152,6 +152,20 @@ function renderRelated(article, articles) {
   sectionEl.hidden = false;
 }
 
+// Counts one read per browser per article (see POST /api/articles/:id/view). Browsers that
+// have signed in to the admin panel are skipped so the team doesn't inflate the numbers.
+function recordView(slug) {
+  try {
+    if (localStorage.getItem('mrgnt_staff')) return;
+    const key = `mrgnt_viewed_${slug}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+  } catch {
+    return; // Storage blocked: skip rather than count every reload.
+  }
+  fetch(`/api/articles/${encodeURIComponent(slug)}/view`, { method: 'POST', keepalive: true }).catch(() => {});
+}
+
 fetch('/api/articles')
   .then((res) => res.json())
   .then((articles) => {
@@ -159,4 +173,5 @@ fetch('/api/articles')
     if (!article) return renderNotFound();
     renderNoticia(article);
     renderRelated(article, articles);
+    recordView(article.slug);
   });

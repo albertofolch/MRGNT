@@ -90,6 +90,20 @@ function renderArtista(artist) {
   }
 }
 
+// Counts one visit per browser per artist (see POST /api/artists/:id/view). Browsers that
+// have signed in to the admin panel are skipped so the team doesn't inflate the numbers.
+function recordView(id) {
+  try {
+    if (localStorage.getItem('mrgnt_staff')) return;
+    const key = `mrgnt_viewed_artist_${id}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+  } catch {
+    return; // Storage blocked: skip rather than count every reload.
+  }
+  fetch(`/api/artists/${encodeURIComponent(id)}/view`, { method: 'POST', keepalive: true }).catch(() => {});
+}
+
 if (isPreviewMode()) {
   const raw = sessionStorage.getItem(PREVIEW_STORAGE_KEY);
   if (raw) {
@@ -108,5 +122,6 @@ if (isPreviewMode()) {
       const artist = artists.find((a) => a.slug === getParam('slug'));
       if (!artist) return renderNotFound();
       renderArtista(artist);
+      recordView(artist.id);
     });
 }

@@ -5,6 +5,7 @@ const admin = require('firebase-admin');
 const { isoToDisplay, dayAbbrev } = require('../lib/dateFormat');
 const { escapeHtml, stripTags, truncate } = require('../lib/html');
 const { NOTICIAS_CATEGORIES } = require('../constants');
+const { setPublicCache } = require('../lib/cache');
 
 const router = express.Router();
 
@@ -138,6 +139,7 @@ router.get('/evento.html', async (req, res) => {
     type: 'website',
   };
 
+  let readFailed = false;
   if (slug) {
     try {
       const snap = await admin.firestore().collection('events').where('slug', '==', slug).limit(1).get();
@@ -149,10 +151,12 @@ router.get('/evento.html', async (req, res) => {
         meta = { title: `${displayTitle} — MRGNT`, description: truncate(description, DESCRIPTION_MAX_LENGTH), url, image: DEFAULT_IMAGE, type: 'article' };
       }
     } catch {
-      // Firestore read failed — fall back to the generic defaults above.
+      // Firestore read failed — fall back to the generic defaults above (uncached).
+      readFailed = true;
     }
   }
 
+  if (!readFailed) setPublicCache(req, res);
   res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(injectMeta(eventoTemplate, meta));
 });
@@ -169,6 +173,7 @@ router.get('/noticia.html', async (req, res) => {
   };
   let html = noticiaTemplate;
 
+  let readFailed = false;
   if (slug) {
     try {
       const snap = await admin.firestore().collection('articles').doc(slug).get();
@@ -221,16 +226,19 @@ router.get('/noticia.html', async (req, res) => {
         }
       }
     } catch {
-      // Firestore read failed — fall back to the generic defaults above.
+      // Firestore read failed — fall back to the generic defaults above (uncached).
+      readFailed = true;
     }
   }
 
+  if (!readFailed) setPublicCache(req, res);
   res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(injectMeta(html, meta));
 });
 
 router.get('/noticias.html', async (req, res) => {
   let html = noticiasTemplate;
+  let readFailed = false;
   try {
     const articles = await fetchPublishedArticles();
     html = html
@@ -240,9 +248,11 @@ router.get('/noticias.html', async (req, res) => {
         `<div class="posts-grid" id="noticias-posts" style="margin-top:0">${articles.map(articleCardHtml).join('')}</div>`
       );
   } catch {
-    // Firestore read failed — the client-side fetch in noticias.js will still populate the page.
+    // Firestore read failed — the client-side fetch in noticias.js will still populate the page (uncached).
+    readFailed = true;
   }
 
+  if (!readFailed) setPublicCache(req, res);
   res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(html);
 });
@@ -258,6 +268,7 @@ router.get('/artista.html', async (req, res) => {
     type: 'website',
   };
 
+  let readFailed = false;
   if (slug) {
     try {
       const snap = await admin.firestore().collection('artists').where('slug', '==', slug).limit(1).get();
@@ -268,10 +279,12 @@ router.get('/artista.html', async (req, res) => {
         meta = { title: `${d.name} — MRGNT`, description: truncate(description, DESCRIPTION_MAX_LENGTH), url, image: DEFAULT_IMAGE, type: 'profile' };
       }
     } catch {
-      // Firestore read failed — fall back to the generic defaults above.
+      // Firestore read failed — fall back to the generic defaults above (uncached).
+      readFailed = true;
     }
   }
 
+  if (!readFailed) setPublicCache(req, res);
   res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(injectMeta(artistaTemplate, meta));
 });

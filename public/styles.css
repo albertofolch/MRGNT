@@ -795,7 +795,34 @@ a.artista-track:hover .artista-track-name { text-decoration: underline; text-und
 }
 .eventos-month .events-list { margin-top: 0; max-width: none; }
 .eventos-month .event-time { width: 220px; }
-.eventos-submit-cta { margin-top: var(--espacio-3); }
+.eventos-header-actions { display: flex; flex-wrap: wrap; gap: var(--espacio-2); margin-top: var(--espacio-3); }
+.eventos-empty { font-size: var(--text-md); color: var(--texto-suave); margin: 0; }
+.eventos-portal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+  margin-top: 48px;
+  padding: var(--espacio-3);
+  border: var(--filete) solid var(--texto-titular);
+  color: var(--texto);
+  text-decoration: none;
+  transition: background-color .1s linear, color .1s linear;
+}
+.eventos-portal-kicker { font-size: var(--text-base); letter-spacing: var(--tracking-vt323-min); text-transform: uppercase; color: var(--texto-suave); }
+.eventos-portal-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--text-2xl);
+  line-height: 1;
+  letter-spacing: var(--tracking-londrina-min);
+  text-transform: uppercase;
+  color: var(--texto-titular);
+}
+.eventos-portal-text { font-size: var(--text-md); line-height: 1.35; }
+.eventos-portal:hover { background: var(--texto-titular); color: var(--superficie); }
+.eventos-portal:hover .eventos-portal-kicker,
+.eventos-portal:hover .eventos-portal-title { color: var(--superficie); }
 .artistas-submit-cta { margin-top: var(--espacio-3); }
 
 /* SUBIR EVENTO / SUBIR ARTISTA (public submission forms) */
