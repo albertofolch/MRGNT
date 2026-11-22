@@ -225,6 +225,18 @@ textarea:focus-visible, summary:focus-visible {
   margin: 0 0 var(--espacio-2);
 }
 .hero-actions { display: flex; gap: var(--espacio-2); flex-wrap: wrap; }
+.hero-feature {
+  display: flex; flex-direction: column; gap: var(--espacio-1);
+  width: 100%; max-width: 560px; box-sizing: border-box;
+  margin-top: var(--espacio-2); padding: var(--espacio-2) var(--espacio-3);
+  border: 2px solid var(--borde); background: var(--amarillo-estrella); color: var(--tinta);
+  text-decoration: none;
+}
+.hero-feature:hover { background: var(--tinta); color: var(--amarillo-estrella); }
+.hero-feature-label { font-family: var(--font-mono); font-size: 20px; letter-spacing: var(--tracking-vt323-min); text-transform: uppercase; }
+.hero-feature-title { font-family: var(--font-display); font-size: 32px; letter-spacing: var(--tracking-londrina-min); text-transform: uppercase; line-height: 1; }
+.hero .hero-feature-text { font-family: var(--font-texto); font-size: 16px; line-height: 1.35; }
+.hero-feature-cta { font-family: var(--font-display); font-size: 20px; letter-spacing: var(--tracking-londrina-min); text-transform: uppercase; }
 
 /* BUTTON */
 .btn {
