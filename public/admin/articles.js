@@ -4,7 +4,7 @@ import { apiFetch, requireAdminSession, renderAdminNav } from '/admin/admin-comm
 import { initRichEditor } from '/admin/rich-editor.js';
 import {
   CAROUSEL_MAX_PHOTOS, CAROUSEL_TIPOS, buildCarouselDraft, fitCarouselDraft, carouselOrder,
-  reviewCarousel, generateCarouselImages, carouselCaption,
+  reviewCarousel, generateCarouselImages, carouselCaption, carouselZip,
 } from '/admin/carousel-image.js';
 
 let articles = [];
@@ -234,6 +234,7 @@ let coverExcluded = false;
 let coverObjectUrl = null;
 let carouselDraft = null;
 let carouselResult = [];
+let carouselZipName = 'carrete';
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -522,6 +523,7 @@ async function generateSocialImage() {
   try {
     carouselResult = await generateCarouselImages(carouselDraft, carouselPhotos);
     const base = slugifyForFilename(carouselDraft.portada.nombre || titleInput.value);
+    carouselZipName = `${base}_carrete`;
     carouselResult.forEach((slide) => {
       slide.filename = `${base}_${slide.name}.jpg`;
       const fig = document.createElement('figure');
@@ -554,16 +556,19 @@ carouselRefillBtn.addEventListener('click', () => {
   resetSocialPreview();
 });
 
-carouselDownloadAllBtn.addEventListener('click', async () => {
-  for (const slide of carouselResult) {
-    const a = document.createElement('a');
-    a.href = slide.dataUrl;
-    a.download = slide.filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    await new Promise((r) => setTimeout(r, 300));
-  }
+// One .zip with every slide and caption.txt: browsers block (or silently drop)
+// several downloads triggered from a single click.
+carouselDownloadAllBtn.addEventListener('click', () => {
+  if (!carouselResult.length) return;
+  const zip = carouselZip(carouselResult, carouselCaptionEl.value);
+  const url = URL.createObjectURL(zip);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${carouselZipName}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 });
 
 carouselCopyCaptionBtn.addEventListener('click', async () => {

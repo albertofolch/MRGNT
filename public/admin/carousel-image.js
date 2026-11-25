@@ -19,6 +19,7 @@ const W = 1080;
 const H = 1350;
 const M = 64; // side margin
 const CW = W - M * 2; // content width (952)
+const PORTADA_PHOTO_H = 880; // cover photo height, above the tinta block
 
 const Y = '#FFDF70'; // amarillo-estrella
 const T = '#181C22'; // tinta
@@ -319,9 +320,10 @@ function newCanvas(bg) {
 
 function drawPortada(ctx, d, total, photo) {
   const p = d.portada;
-  drawCover(ctx, photo.img, 0, 0, W, H, 50, photo.pos);
+  // The photo is cut where the text block starts, so the framing covers only what's visible.
+  drawCover(ctx, photo.img, 0, 0, W, PORTADA_PHOTO_H, 50, photo.pos);
   ctx.fillStyle = T;
-  ctx.fillRect(0, 880, W, 470);
+  ctx.fillRect(0, PORTADA_PHOTO_H, W, H - PORTADA_PHOTO_H);
   drawBar(ctx, d.tipo, 1, total, Y, T);
 
   // Name: one line from 150 px down to 96 px; longer names wrap to two lines (≤ 80 px).
@@ -409,6 +411,92 @@ function drawCierre(ctx, d, n, total, logo) {
     const lh = lw * (logo.height / logo.width);
     ctx.drawImage(logo, W - M - lw, H - M - lh, lw, lh);
   }
+}
+
+// ───────── ZIP (one download with every slide + caption.txt) ─────────
+// Minimal "stored" (uncompressed) ZIP writer: JPEGs don't compress anyway, and one
+// file download works in every browser, unlike several programmatic downloads.
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function dataUrlToBytes(dataUrl) {
+  const bin = atob(dataUrl.split(',')[1]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+// files: [{ name, bytes: Uint8Array }] → Blob (application/zip)
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  const parts = [];
+  const central = [];
+  let offset = 0;
+  files.forEach(({ name, bytes }) => {
+    const nameBytes = enc.encode(name);
+    const crc = crc32(bytes);
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true);
+    local.setUint16(4, 20, true);
+    local.setUint16(6, 0x0800, true); // UTF-8 names
+    local.setUint16(8, 0, true); // stored
+    local.setUint16(10, dosTime, true);
+    local.setUint16(12, dosDate, true);
+    local.setUint32(14, crc, true);
+    local.setUint32(18, bytes.length, true);
+    local.setUint32(22, bytes.length, true);
+    local.setUint16(26, nameBytes.length, true);
+    local.setUint16(28, 0, true);
+    parts.push(local, nameBytes, bytes);
+
+    const cd = new DataView(new ArrayBuffer(46));
+    cd.setUint32(0, 0x02014b50, true);
+    cd.setUint16(4, 20, true);
+    cd.setUint16(6, 20, true);
+    cd.setUint16(8, 0x0800, true);
+    cd.setUint16(10, 0, true);
+    cd.setUint16(12, dosTime, true);
+    cd.setUint16(14, dosDate, true);
+    cd.setUint32(16, crc, true);
+    cd.setUint32(20, bytes.length, true);
+    cd.setUint32(24, bytes.length, true);
+    cd.setUint16(28, nameBytes.length, true);
+    cd.setUint32(42, offset, true);
+    central.push(cd, nameBytes);
+    offset += 30 + nameBytes.length + bytes.length;
+  });
+  const cdSize = central.reduce((n, p) => n + p.byteLength, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, files.length, true);
+  end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true);
+  end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, end], { type: 'application/zip' });
+}
+
+// slides: [{ filename, dataUrl }] from generateCarouselImages (+ filename); caption: string
+export function carouselZip(slides, caption) {
+  const files = slides.map((s) => ({ name: s.filename, bytes: dataUrlToBytes(s.dataUrl) }));
+  if (caption) files.push({ name: 'caption.txt', bytes: new TextEncoder().encode(`${caption}\n`) });
+  return makeZip(files);
 }
 
 // photos: [{ src, pos }] — pos is the vertical framing (0 = top, 100 = bottom).

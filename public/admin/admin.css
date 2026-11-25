@@ -307,7 +307,7 @@ body[data-admin] { min-height: 100vh; }
 .admin-carousel-photos:empty { display: none; }
 .admin-carousel-photo { width: 172px; display: flex; flex-direction: column; gap: 6px; }
 .admin-carousel-photo img { width: 100%; aspect-ratio: 9 / 8; object-fit: cover; border: var(--filete) solid var(--borde); border-radius: var(--radio-0); display: block; }
-.admin-carousel-photo--portada img { aspect-ratio: 4 / 5; }
+.admin-carousel-photo--portada img { aspect-ratio: 1080 / 880; } /* visible part of the cover slide */
 .admin-carousel-photo-meta { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: var(--text-sm); color: var(--texto); text-transform: uppercase; }
 .admin-carousel-photo-actions { display: flex; gap: 4px; }
 .admin-carousel-photo-actions button { font-family: var(--font-mono); font-size: var(--text-xs); width: 26px; height: 26px; padding: 0; border: var(--filete) solid var(--borde); border-radius: var(--radio-0); background: var(--superficie-elevada); color: var(--texto); cursor: pointer; }
