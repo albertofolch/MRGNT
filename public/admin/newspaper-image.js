@@ -1,5 +1,6 @@
-// Builds "MRGNT newspaper" style images entirely with the Canvas 2D API —
-// no external APIs, no AI, just the text/photos already on the event or article.
+// Builds the "MRGNT newspaper" events image entirely with the Canvas 2D API —
+// no external APIs, no AI, just the text/photos already on the events.
+// (Articles use the carrete format instead: see /admin/carousel-image.js.)
 // Styled with the MRGNT design system (see the tokens at the top of /styles.css):
 // Londrina Solid 900 + VT323, tinta/amarillo-estrella, the «señal» stripe, square
 // corners and the official halftone logos.
@@ -9,8 +10,6 @@ export const EVENTS_MAX = 6;
 
 const WIDTH_EVENTS = 1080;
 const HEIGHT_EVENTS = 1920;
-const WIDTH_ARTICLE = 1080;
-const HEIGHT_ARTICLE = 1350;
 const MARGIN = 56;
 
 const COLORS = {
@@ -90,7 +89,7 @@ function resolveImageSrc(src) {
   return src;
 }
 
-function loadImage(src) {
+export function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
@@ -350,177 +349,6 @@ export async function generateEventsNewspaperImage(events) {
 
   await drawEventsList(ctx, WIDTH_EVENTS, y, footerTop, mapped);
   drawEventsFooter(ctx, WIDTH_EVENTS, HEIGHT_EVENTS, logos.amarillo);
-
-  return canvas.toDataURL('image/png');
-}
-
-// ---- Article page ----
-
-function drawArticleHeader(ctx, width, logoImg) {
-  drawSenal(ctx, width, 0);
-  const y = SENAL_H + 32;
-  const logoH = 96;
-  const logoW = logoImg ? logoH * (logoImg.width / logoImg.height) : 0;
-  if (logoImg) ctx.drawImage(logoImg, (width - logoW) / 2, y, logoW, logoH);
-  setFont(ctx, 'mono', 20, 4);
-  ctx.fillStyle = COLORS.ink;
-  ctx.textAlign = 'center';
-  ctx.fillText(LEYENDA, width / 2, y + logoH + 26);
-  ctx.textAlign = 'left';
-  const ruleY = y + logoH + 44;
-  drawRule(ctx, MARGIN, width - MARGIN, ruleY, 2);
-  return ruleY;
-}
-
-function drawArticleByline(ctx, width, y0, author, dateDisplay) {
-  const marginX = MARGIN;
-  const y = y0 + 34;
-  setFont(ctx, 'mono', 24, 3);
-  ctx.fillStyle = COLORS.ink;
-  ctx.textAlign = 'left';
-  ctx.fillText((author || 'MRGNT').toUpperCase(), marginX, y);
-  ctx.textAlign = 'right';
-  ctx.fillText((dateDisplay || '').toUpperCase(), width - marginX, y);
-  ctx.textAlign = 'left';
-  drawDoubleRule(ctx, marginX, width - marginX, y + 16);
-  return y + 16 + 7;
-}
-
-function drawArticleHeadline(ctx, width, y0, title) {
-  const marginX = MARGIN;
-  const maxWidth = width - marginX * 2;
-  let size = 76;
-  let lines = [];
-  do {
-    setFont(ctx, 'display', size, 2);
-    lines = wrapText(ctx, title.toUpperCase(), maxWidth);
-    size -= 4;
-  } while (lines.length > 3 && size > 40);
-  size += 4;
-  setFont(ctx, 'display', size, 2);
-
-  let y = y0 + size + 12;
-  ctx.fillStyle = COLORS.ink;
-  lines.slice(0, 3).forEach((line) => {
-    ctx.fillText(line, marginX, y);
-    y += size;
-  });
-  return y - size + 26;
-}
-
-function drawArticleSummary(ctx, width, y0, text) {
-  const marginX = MARGIN;
-  const boxX = marginX;
-  const boxW = width - marginX * 2;
-  const padX = 24;
-  const padY = 20;
-  const lineHeight = 28;
-  const textW = boxW - padX * 2;
-
-  setFont(ctx, 'mono', 27, 2);
-  const lines = wrapText(ctx, text.toUpperCase(), textW);
-  const boxH = padY * 2 + lines.length * lineHeight;
-
-  ctx.fillStyle = COLORS.ink;
-  ctx.fillRect(boxX, y0, boxW, boxH);
-
-  ctx.fillStyle = COLORS.accent;
-  ctx.textAlign = 'left';
-  let ty = y0 + padY + lineHeight - 8;
-  lines.forEach((line) => {
-    ctx.fillText(line, boxX + padX, ty);
-    ty += lineHeight;
-  });
-
-  return y0 + boxH;
-}
-
-function drawArticleColumns(ctx, width, y0, text, colHeight) {
-  const marginX = MARGIN;
-  const colGap = 30;
-  const colCount = 3;
-  const colW = (width - marginX * 2 - colGap * (colCount - 1)) / colCount;
-  const lineHeight = 24;
-  const maxLinesPerCol = Math.max(1, Math.floor(colHeight / lineHeight));
-
-  setFont(ctx, 'mono', 23, 0);
-  ctx.fillStyle = COLORS.ink;
-  const allLines = wrapText(ctx, text, colW);
-  const total = maxLinesPerCol * colCount;
-
-  let idx = 0;
-  for (let c = 0; c < colCount; c++) {
-    const colX = marginX + c * (colW + colGap);
-    if (c > 0) drawRule(ctx, colX - colGap / 2, colX - colGap / 2 + 1, y0, colHeight);
-    let ly = y0 + lineHeight - 6;
-    for (let n = 0; n < maxLinesPerCol && idx < allLines.length; n++, idx++) {
-      let line = allLines[idx];
-      const isCutoff = idx === total - 1 && idx < allLines.length - 1;
-      if (isCutoff) {
-        while (line.length > 1 && ctx.measureText(`${line}…`).width > colW) line = line.slice(0, -1);
-        line += '…';
-      }
-      ctx.fillText(line, colX, ly);
-      ly += lineHeight;
-    }
-  }
-  return y0 + colHeight;
-}
-
-// Tinta band with the amarillo call to action, closed by the «señal» stripe.
-function drawArticleFooter(ctx, width, height) {
-  const bandTop = height - 86;
-  const bandBottom = height - SENAL_H;
-  ctx.fillStyle = COLORS.ink;
-  ctx.fillRect(0, bandTop, width, bandBottom - bandTop);
-  drawSenal(ctx, width, bandBottom);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  setFont(ctx, 'mono', 30, 6);
-  ctx.fillStyle = COLORS.accent;
-  ctx.fillText('LEER ARTÍCULO COMPLETO EN WWW.MRGNT.MX »', width / 2, (bandTop + bandBottom) / 2 + 2);
-  ctx.textBaseline = 'alphabetic';
-  ctx.textAlign = 'left';
-}
-
-// photoSource: { src } — a photo is required (matches the "cover photo" requirement on articles)
-export async function generateArticleNewspaperImage({ title, author, dateDisplay, bodyHtml, excerpt, photoSource }) {
-  if (!title || !title.trim()) throw new Error('Escribe un título antes de generar la imagen.');
-  if (!photoSource) throw new Error('Sube una foto (no video) para generar la imagen.');
-  const [, logos] = await Promise.all([loadFonts(), getLogos()]);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = WIDTH_ARTICLE;
-  canvas.height = HEIGHT_ARTICLE;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = COLORS.paper;
-  ctx.fillRect(0, 0, WIDTH_ARTICLE, HEIGHT_ARTICLE);
-
-  let y = drawArticleHeader(ctx, WIDTH_ARTICLE, logos.tinta);
-  y = drawArticleByline(ctx, WIDTH_ARTICLE, y, author, dateDisplay);
-  y = drawArticleHeadline(ctx, WIDTH_ARTICLE, y, title.trim());
-
-  if (excerpt && excerpt.trim()) {
-    y = drawArticleSummary(ctx, WIDTH_ARTICLE, y, excerpt.trim());
-    y += 24;
-  }
-
-  const bodyText = stripHtml(bodyHtml) || (excerpt || '').trim();
-  const img = await loadImage(photoSource.src);
-
-  const footerTop = HEIGHT_ARTICLE - 96;
-  const remaining = Math.max(180, footerTop - y - 40);
-  const colHeight = Math.round(remaining * 0.5);
-  const photoHeight = Math.max(120, remaining - colHeight - 24);
-
-  y = drawArticleColumns(ctx, WIDTH_ARTICLE, y + 10, bodyText, colHeight);
-  y += 24;
-  drawCover(ctx, img, MARGIN, y, WIDTH_ARTICLE - MARGIN * 2, photoHeight);
-  ctx.strokeStyle = COLORS.ink;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(MARGIN, y, WIDTH_ARTICLE - MARGIN * 2, photoHeight);
-
-  drawArticleFooter(ctx, WIDTH_ARTICLE, HEIGHT_ARTICLE);
 
   return canvas.toDataURL('image/png');
 }

@@ -65,14 +65,33 @@
 
   <div class="card admin-social-card">
     <div class="admin-heading">
-      <h2>IMAGEN PARA REDES SOCIALES</h2>
+      <h2>CARRETE PARA REDES SOCIALES</h2>
     </div>
-    <p class="admin-hint">Genera una imagen estilo periódico MRGNT con la foto de portada, el título y el texto del artículo, lista para compartir.</p>
-    <button type="button" class="btn btn-ghost btn-md admin-social-generate" id="article-social-generate">Generar imagen</button>
+    <p class="admin-hint">Genera el carrete MRGNT (slides de 1080×1350): portada, slides de texto y de foto alternadas y cierre con mrgnt.mx. La numeración y los colores se ponen solos. Los textos se llenan con la nota; revísalos antes de descargar.</p>
+
+    <div class="admin-field">
+      <label for="carousel-photo-input">Fotos del carrete (de 1 a 5)</label>
+      <div class="admin-carousel-photos" id="carousel-photos"></div>
+      <input class="admin-input" type="file" id="carousel-photo-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
+      <p class="admin-hint">La foto 01 es la portada; cada foto extra suma una slide de foto. La foto de portada del artículo se agrega sola. Usa las flechas para reordenar y «Encuadre» para elegir qué parte se ve.</p>
+    </div>
+
+    <div class="admin-carousel-editor" id="carousel-editor" hidden></div>
+
+    <div class="admin-form-actions">
+      <button type="button" class="btn btn-ghost btn-md admin-social-generate" id="article-social-generate">Generar carrete</button>
+      <button type="button" class="admin-btn-link" id="carousel-refill" hidden>Volver a llenar con la nota</button>
+    </div>
     <p class="admin-error" id="article-social-error" hidden></p>
+    <ul class="admin-carousel-warnings" id="carousel-warnings" hidden></ul>
     <div class="admin-social-preview" id="article-social-preview" hidden>
-      <img id="article-social-preview-img" alt="Vista previa de la imagen para redes sociales">
-      <a class="btn btn-secondary btn-md" id="article-social-download" download>Descargar imagen</a>
+      <div class="admin-carousel-slides" id="carousel-slides"></div>
+      <button type="button" class="btn btn-secondary btn-md" id="carousel-download-all">Descargar todas</button>
+      <div class="admin-field admin-carousel-caption">
+        <label for="carousel-caption">Caption</label>
+        <textarea class="admin-textarea" id="carousel-caption" rows="8" readonly></textarea>
+        <button type="button" class="admin-btn-link" id="carousel-copy-caption">Copiar caption</button>
+      </div>
     </div>
   </div>
 

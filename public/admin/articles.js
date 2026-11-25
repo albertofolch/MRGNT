@@ -2,7 +2,10 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'https:/
 import { storage } from '/firebase-config.js';
 import { apiFetch, requireAdminSession, renderAdminNav } from '/admin/admin-common.js';
 import { initRichEditor } from '/admin/rich-editor.js';
-import { generateArticleNewspaperImage } from '/admin/newspaper-image.js';
+import {
+  CAROUSEL_MAX_PHOTOS, CAROUSEL_TIPOS, buildCarouselDraft, fitCarouselDraft, carouselOrder,
+  reviewCarousel, generateCarouselImages, carouselCaption,
+} from '/admin/carousel-image.js';
 
 let articles = [];
 let editingId = null;
@@ -29,8 +32,15 @@ const noteEditor = initRichEditor(document.getElementById('article-note-editor')
 const socialGenerateBtn = document.getElementById('article-social-generate');
 const socialErrorEl = document.getElementById('article-social-error');
 const socialPreviewEl = document.getElementById('article-social-preview');
-const socialPreviewImg = document.getElementById('article-social-preview-img');
-const socialDownloadLink = document.getElementById('article-social-download');
+const carouselPhotosEl = document.getElementById('carousel-photos');
+const carouselPhotoInput = document.getElementById('carousel-photo-input');
+const carouselEditorEl = document.getElementById('carousel-editor');
+const carouselRefillBtn = document.getElementById('carousel-refill');
+const carouselWarningsEl = document.getElementById('carousel-warnings');
+const carouselSlidesEl = document.getElementById('carousel-slides');
+const carouselDownloadAllBtn = document.getElementById('carousel-download-all');
+const carouselCaptionEl = document.getElementById('carousel-caption');
+const carouselCopyCaptionBtn = document.getElementById('carousel-copy-caption');
 
 function hasMedia() {
   if (mediaInput.files[0]) return true;
@@ -80,6 +90,7 @@ function renderMediaPreview(article) {
   mediaCurrentEl.hidden = false;
   document.getElementById('article-remove-media').addEventListener('change', (e) => {
     currentMediaRemoved = e.target.checked;
+    syncCoverPhoto();
   });
 }
 
@@ -95,7 +106,7 @@ function resetForm() {
   errorEl.hidden = true;
   renderMediaPreview(null);
   renderEmbedPreview(null);
-  resetSocialPreview();
+  resetCarousel();
 }
 
 function startEdit(article) {
@@ -114,7 +125,7 @@ function startEdit(article) {
   submitBtn.textContent = 'Guardar cambios';
   headingEl.textContent = `EDITAR: ${article.title.toUpperCase()}`;
   errorEl.hidden = true;
-  resetSocialPreview();
+  resetCarousel();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -213,32 +224,258 @@ async function uploadMediaFile(file) {
   return { url, path, mediaType: file.type.startsWith('video/') ? 'video' : 'image' };
 }
 
+// ───────── Carrete para redes sociales ─────────
+// Photos: [{ id, src, name, pos, isCover }] — the article's cover photo joins the
+// list on its own (isCover); extra photos are local files. Max CAROUSEL_MAX_PHOTOS.
+let carouselPhotos = [];
+let carouselPhotoSeq = 0;
+let carouselFieldSeq = 0;
+let coverExcluded = false;
+let coverObjectUrl = null;
+let carouselDraft = null;
+let carouselResult = [];
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
 function resetSocialPreview() {
   socialErrorEl.hidden = true;
+  socialErrorEl.textContent = '';
+  carouselWarningsEl.hidden = true;
+  carouselWarningsEl.innerHTML = '';
   socialPreviewEl.hidden = true;
-  socialPreviewImg.removeAttribute('src');
-  socialDownloadLink.removeAttribute('href');
+  carouselSlidesEl.innerHTML = '';
+  carouselResult = [];
 }
 
-function getPhotoSource() {
+function showSocialError(message) {
+  socialErrorEl.textContent = message;
+  socialErrorEl.hidden = false;
+}
+
+function coverPhotoSrc() {
   const file = mediaInput.files[0];
   if (file) {
     if (!file.type.startsWith('image/')) return null;
-    return { src: URL.createObjectURL(file) };
+    if (!coverObjectUrl || coverObjectUrl.file !== file) {
+      if (coverObjectUrl) URL.revokeObjectURL(coverObjectUrl.url);
+      coverObjectUrl = { file, url: URL.createObjectURL(file) };
+    }
+    return coverObjectUrl.url;
   }
   if (editingId && editingArticle && editingArticle.media && !currentMediaRemoved && editingArticle.mediaType !== 'video') {
-    return { src: editingArticle.media };
+    return editingArticle.media;
   }
   return null;
 }
 
-const MONTH_ABBR = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+// Keeps the article's cover photo in the carrete list in step with the media field.
+function syncCoverPhoto() {
+  const src = coverPhotoSrc();
+  const idx = carouselPhotos.findIndex((p) => p.isCover);
+  if (idx >= 0 && carouselPhotos[idx].src === src) return;
+  if (idx >= 0) carouselPhotos.splice(idx, 1);
+  if (src && !coverExcluded && carouselPhotos.length < CAROUSEL_MAX_PHOTOS) {
+    carouselPhotos.splice(idx >= 0 ? idx : 0, 0, { id: ++carouselPhotoSeq, src, name: 'Foto de portada del artículo', pos: 50, isCover: true });
+  }
+  onCarouselPhotosChanged();
+}
 
-function isoToDisplayDate(iso) {
-  if (!iso) return '';
-  const [year, month, day] = iso.split('-').map(Number);
-  if (!year || !month || !day) return '';
-  return `${String(day).padStart(2, '0')} ${MONTH_ABBR[month - 1]} ${year}`;
+function onCarouselPhotosChanged() {
+  renderCarouselPhotos();
+  if (carouselDraft) {
+    fitCarouselDraft(carouselDraft, Math.max(1, carouselPhotos.length));
+    renderCarouselEditor();
+  }
+  resetSocialPreview();
+}
+
+function renderCarouselPhotos() {
+  carouselPhotosEl.innerHTML = '';
+  carouselPhotos.forEach((photo, i) => {
+    const item = document.createElement('div');
+    item.className = `admin-carousel-photo${i === 0 ? ' admin-carousel-photo--portada' : ''}`;
+    item.innerHTML = `
+      <img alt="">
+      <div class="admin-carousel-photo-meta">
+        <span>${pad2(i + 1)}${i === 0 ? ' · Portada' : ''}</span>
+        <span class="admin-carousel-photo-actions">
+          <button type="button" data-act="left" aria-label="Mover antes" ${i === 0 ? 'disabled' : ''}>◀</button>
+          <button type="button" data-act="right" aria-label="Mover después" ${i === carouselPhotos.length - 1 ? 'disabled' : ''}>▶</button>
+          <button type="button" data-act="remove" aria-label="Quitar foto">✕</button>
+        </span>
+      </div>
+      <p class="admin-carousel-photo-name"></p>
+      <label class="admin-carousel-photo-pos">Encuadre <input type="range" min="0" max="100" step="1"></label>
+    `;
+    const img = item.querySelector('img');
+    img.src = photo.src;
+    img.style.objectPosition = `50% ${photo.pos}%`;
+    item.querySelector('.admin-carousel-photo-name').textContent = photo.name;
+    const range = item.querySelector('input[type="range"]');
+    range.value = photo.pos;
+    range.addEventListener('input', () => {
+      photo.pos = Number(range.value);
+      img.style.objectPosition = `50% ${photo.pos}%`;
+    });
+    item.querySelector('[data-act="left"]').addEventListener('click', () => moveCarouselPhoto(i, -1));
+    item.querySelector('[data-act="right"]').addEventListener('click', () => moveCarouselPhoto(i, 1));
+    item.querySelector('[data-act="remove"]').addEventListener('click', () => removeCarouselPhoto(i));
+    carouselPhotosEl.appendChild(item);
+  });
+  const full = carouselPhotos.length >= CAROUSEL_MAX_PHOTOS;
+  carouselPhotoInput.disabled = full;
+  carouselPhotoInput.title = full ? `Máximo ${CAROUSEL_MAX_PHOTOS} fotos` : '';
+}
+
+function moveCarouselPhoto(i, delta) {
+  const j = i + delta;
+  if (j < 0 || j >= carouselPhotos.length) return;
+  [carouselPhotos[i], carouselPhotos[j]] = [carouselPhotos[j], carouselPhotos[i]];
+  renderCarouselPhotos();
+  resetSocialPreview();
+}
+
+function removeCarouselPhoto(i) {
+  const [photo] = carouselPhotos.splice(i, 1);
+  if (photo.isCover) coverExcluded = true;
+  else URL.revokeObjectURL(photo.src);
+  onCarouselPhotosChanged();
+}
+
+carouselPhotoInput.addEventListener('change', () => {
+  const files = [...carouselPhotoInput.files].filter((f) => f.type.startsWith('image/'));
+  const room = Math.max(0, CAROUSEL_MAX_PHOTOS - carouselPhotos.length);
+  files.slice(0, room).forEach((file) => {
+    carouselPhotos.push({ id: ++carouselPhotoSeq, src: URL.createObjectURL(file), name: file.name, pos: 50, isCover: false });
+  });
+  carouselPhotoInput.value = '';
+  onCarouselPhotosChanged();
+  if (files.length > room) showSocialError(`Máximo ${CAROUSEL_MAX_PHOTOS} fotos por carrete: se agregaron ${room}.`);
+});
+
+function articleFieldsForCarousel() {
+  return {
+    title: titleInput.value,
+    category: categorySelect.value,
+    isoDate: document.getElementById('article-date').value,
+    excerpt: document.getElementById('article-excerpt').value,
+    bodyHtml: noteEditor.getHTML(),
+  };
+}
+
+function carouselField(parent, label, obj, key, { multiline = false, options = null, counter = false } = {}) {
+  const wrap = document.createElement('div');
+  wrap.className = 'admin-field';
+  const id = `carousel-f-${++carouselFieldSeq}`;
+  const lab = document.createElement('label');
+  lab.htmlFor = id;
+  lab.textContent = label;
+  let input;
+  if (options) {
+    input = document.createElement('select');
+    input.className = 'admin-select';
+    options.forEach((o) => input.add(new Option(o, o)));
+  } else if (multiline) {
+    input = document.createElement('textarea');
+    input.className = 'admin-textarea admin-carousel-textarea';
+    input.rows = 2;
+  } else {
+    input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'admin-input';
+  }
+  input.id = id;
+  input.value = obj[key] || '';
+  wrap.append(lab, input);
+  let hint = null;
+  if (counter) {
+    hint = document.createElement('p');
+    hint.className = 'admin-hint';
+    wrap.append(hint);
+  }
+  const update = () => {
+    if (!hint) return;
+    const len = input.value.trim().length;
+    hint.textContent = len > 90 ? `${len} caracteres · mejor menos de 90` : `${len} caracteres`;
+    hint.classList.toggle('admin-carousel-over', len > 90);
+  };
+  update();
+  input.addEventListener(options ? 'change' : 'input', () => {
+    obj[key] = input.value;
+    update();
+  });
+  parent.appendChild(wrap);
+  return wrap;
+}
+
+function carouselGroup(title) {
+  const g = document.createElement('fieldset');
+  g.className = 'admin-carousel-group';
+  const legend = document.createElement('legend');
+  legend.textContent = title;
+  g.appendChild(legend);
+  carouselEditorEl.appendChild(g);
+  return g;
+}
+
+function renderCarouselEditor() {
+  carouselEditorEl.innerHTML = '';
+  if (!carouselDraft) {
+    carouselEditorEl.hidden = true;
+    return;
+  }
+  const d = carouselDraft;
+  const order = carouselOrder(Math.max(1, carouselPhotos.length));
+  const total = order.length + 2;
+
+  const portada = carouselGroup('01 · Portada');
+  carouselField(portada, 'Tipo', d, 'tipo', { options: CAROUSEL_TIPOS });
+  carouselField(portada, 'Antetítulo', d.portada, 'antetitulo');
+  carouselField(portada, 'Nombre (artista o tema, corto)', d.portada, 'nombre');
+  const row = document.createElement('div');
+  row.className = 'admin-form-row';
+  portada.appendChild(row);
+  carouselField(row, 'Lugar', d.portada, 'lugar');
+  carouselField(row, 'Ciudad', d.portada, 'ciudad');
+  carouselField(row, 'Fecha', d.portada, 'fecha');
+
+  order.forEach(({ kind, index }, i) => {
+    const n = i + 2;
+    if (kind === 'texto') {
+      const s = d.textos[index];
+      const g = carouselGroup(`${pad2(n)} · Texto`);
+      carouselField(g, 'Título (sin número)', s, 'titulo');
+      carouselField(g, 'Frase (una sola oración)', s, 'frase', { multiline: true, counter: true });
+      carouselField(g, 'Línea chica (opcional)', s, 'linea');
+    } else {
+      const s = d.fotos[index];
+      const g = carouselGroup(`${pad2(n)} · Foto ${pad2(index + 2)}`);
+      carouselField(g, 'Título (sin número)', s, 'titulo');
+      carouselField(g, 'Frase (una sola oración)', s, 'frase', { multiline: true, counter: true });
+    }
+  });
+
+  const cierre = carouselGroup(`${pad2(total)} · Cierre`);
+  carouselField(cierre, 'Título', d.cierre, 'titulo');
+  carouselField(cierre, 'Frase-mensaje', d.cierre, 'frase', { multiline: true, counter: true });
+  carouselField(cierre, 'Línea chica (opcional)', d.cierre, 'linea');
+
+  const caption = carouselGroup('Caption');
+  carouselField(caption, 'Texto (2 o 3 líneas)', d.caption, 'texto', { multiline: true });
+  carouselField(caption, 'Hashtags', d.caption, 'hashtags');
+
+  carouselEditorEl.hidden = false;
+}
+
+function resetCarousel() {
+  carouselPhotos.forEach((p) => { if (!p.isCover) URL.revokeObjectURL(p.src); });
+  carouselPhotos = [];
+  coverExcluded = false;
+  carouselDraft = null;
+  carouselRefillBtn.hidden = true;
+  socialGenerateBtn.textContent = 'Generar carrete';
+  renderCarouselEditor();
+  syncCoverPhoto();
 }
 
 const DIACRITICS_RE = new RegExp(`[${String.fromCodePoint(0x0300)}-${String.fromCodePoint(0x036f)}]`, 'g');
@@ -253,43 +490,97 @@ function slugifyForFilename(text) {
 async function generateSocialImage() {
   resetSocialPreview();
 
-  const title = titleInput.value.trim();
-  if (!title) {
-    socialErrorEl.textContent = 'Escribe un título antes de generar la imagen.';
-    socialErrorEl.hidden = false;
+  if (!titleInput.value.trim()) {
+    showSocialError('Escribe un título antes de generar el carrete.');
     return;
   }
-
-  const photoSource = getPhotoSource();
-  if (!photoSource) {
-    socialErrorEl.textContent = 'Sube una foto (no video) para generar la imagen de redes sociales.';
-    socialErrorEl.hidden = false;
+  if (!carouselPhotos.length) {
+    showSocialError('Agrega al menos una foto (no video) para generar el carrete.');
     return;
+  }
+  if (!carouselDraft) {
+    carouselDraft = buildCarouselDraft(articleFieldsForCarousel(), carouselPhotos.length);
+    renderCarouselEditor();
+    carouselRefillBtn.hidden = false;
+  }
+
+  const { errors, warnings } = reviewCarousel(carouselDraft, carouselPhotos.length);
+  if (errors.length) {
+    showSocialError(errors.join('\n'));
+    return;
+  }
+  if (warnings.length) {
+    warnings.forEach((w) => {
+      const li = document.createElement('li');
+      li.textContent = w;
+      carouselWarningsEl.appendChild(li);
+    });
+    carouselWarningsEl.hidden = false;
   }
 
   socialGenerateBtn.disabled = true;
   try {
-    const dataUrl = await generateArticleNewspaperImage({
-      title,
-      author: document.getElementById('article-author').value,
-      dateDisplay: isoToDisplayDate(document.getElementById('article-date').value),
-      bodyHtml: noteEditor.getHTML(),
-      excerpt: document.getElementById('article-excerpt').value,
-      photoSource,
+    carouselResult = await generateCarouselImages(carouselDraft, carouselPhotos);
+    const base = slugifyForFilename(carouselDraft.portada.nombre || titleInput.value);
+    carouselResult.forEach((slide) => {
+      slide.filename = `${base}_${slide.name}.jpg`;
+      const fig = document.createElement('figure');
+      fig.className = 'admin-carousel-slide';
+      fig.innerHTML = '<img alt=""><a class="admin-btn-link" download></a>';
+      fig.querySelector('img').src = slide.dataUrl;
+      fig.querySelector('img').alt = `Slide ${slide.name.slice(0, 2)}`;
+      const link = fig.querySelector('a');
+      link.href = slide.dataUrl;
+      link.download = slide.filename;
+      link.textContent = `Descargar ${slide.name.slice(0, 2)}`;
+      carouselSlidesEl.appendChild(fig);
     });
-    socialPreviewImg.src = dataUrl;
-    socialDownloadLink.href = dataUrl;
-    socialDownloadLink.download = `${slugifyForFilename(title)}-social.png`;
+    carouselCaptionEl.value = carouselCaption(carouselDraft);
     socialPreviewEl.hidden = false;
+    socialGenerateBtn.textContent = 'Actualizar carrete';
   } catch (err) {
-    socialErrorEl.textContent = err.message || 'No se pudo generar la imagen. Inténtalo de nuevo.';
-    socialErrorEl.hidden = false;
+    showSocialError(err.message || 'No se pudo generar el carrete. Inténtalo de nuevo.');
   } finally {
     socialGenerateBtn.disabled = false;
   }
 }
 
 socialGenerateBtn.addEventListener('click', generateSocialImage);
+
+carouselRefillBtn.addEventListener('click', () => {
+  if (!confirm('¿Reemplazar los textos del carrete con los de la nota? Se pierden los cambios que hiciste aquí.')) return;
+  carouselDraft = buildCarouselDraft(articleFieldsForCarousel(), Math.max(1, carouselPhotos.length));
+  renderCarouselEditor();
+  resetSocialPreview();
+});
+
+carouselDownloadAllBtn.addEventListener('click', async () => {
+  for (const slide of carouselResult) {
+    const a = document.createElement('a');
+    a.href = slide.dataUrl;
+    a.download = slide.filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    await new Promise((r) => setTimeout(r, 300));
+  }
+});
+
+carouselCopyCaptionBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(carouselCaptionEl.value);
+  } catch {
+    carouselCaptionEl.select();
+    document.execCommand('copy');
+  }
+  carouselCopyCaptionBtn.textContent = 'Copiado';
+  setTimeout(() => { carouselCopyCaptionBtn.textContent = 'Copiar caption'; }, 1500);
+});
+
+mediaInput.addEventListener('change', () => {
+  coverExcluded = false;
+  syncCoverPhoto();
+});
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
